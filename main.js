@@ -244,20 +244,18 @@ function createSun() {
     const textureLoader = new THREE.TextureLoader();
     const sunTexture = textureLoader.load('/sol/2k_sun.jpg');
 
-    const sunGeometry = new THREE.SphereGeometry(150, 64, 64);
+    const sunGeometry = new THREE.SphereGeometry(200, 64, 64);
     const sunMaterial = new THREE.MeshBasicMaterial({
         map: sunTexture,
-        emissive: 0xffaa00,
-        emissiveIntensity: 0.8,
-        emissiveMap: sunTexture
+        color: 0xffffff, // Full white to show texture properly
     });
     const sun = new THREE.Mesh(sunGeometry, sunMaterial);
-    // Position sun in a different location - to the right and higher
-    sun.position.set(1200, 600, -800);
+    // Position sun closer and to the left side, visible from start
+    sun.position.set(-500, 300, -400);
     scene.add(sun);
 
     // Add sun light
-    const sunLight = new THREE.PointLight(0xffffff, 3, 5000);
+    const sunLight = new THREE.PointLight(0xffffcc, 3, 5000);
     sunLight.position.copy(sun.position);
     scene.add(sunLight);
 }
