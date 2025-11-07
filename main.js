@@ -51,13 +51,7 @@ let pigLanded = false;
 let pigWalkingAway = false;
 let balloonsReleased = false;
 let landingTime = 0;
-let treesGroup, buildingsGroup;
-const waterLocations = [];
 let journeyStarted = false;
-let resumesTextMesh = null;
-let projectsTextMesh = null;
-let resumesStars = [];
-let projectsClouds = [];
 let pigVelocityY = 0; // Pig's falling velocity
 const gravity = -0.5; // Gravity strength
 
@@ -245,6 +239,48 @@ function createBalloons() {
     return balloonGroup;
 }
 
+// Create sun
+function createSun() {
+    const textureLoader = new THREE.TextureLoader();
+    const sunTexture = textureLoader.load('/sol/2k_sun.jpg');
+
+    const sunGeometry = new THREE.SphereGeometry(150, 64, 64);
+    const sunMaterial = new THREE.MeshBasicMaterial({
+        map: sunTexture,
+        emissive: 0xffaa00,
+        emissiveIntensity: 0.8,
+        emissiveMap: sunTexture
+    });
+    const sun = new THREE.Mesh(sunGeometry, sunMaterial);
+    // Position sun in a different location - to the right and higher
+    sun.position.set(1200, 600, -800);
+    scene.add(sun);
+
+    // Add sun light
+    const sunLight = new THREE.PointLight(0xffffff, 3, 5000);
+    sunLight.position.copy(sun.position);
+    scene.add(sunLight);
+}
+
+// Create moon
+function createMoon() {
+    const textureLoader = new THREE.TextureLoader();
+    const moonDiffuse = textureLoader.load('/44-moon-photorealistic-2k (extract.me)/Textures/Diffuse_2K.png');
+    const moonBump = textureLoader.load('/44-moon-photorealistic-2k (extract.me)/Textures/Bump_2K.png');
+
+    const moonGeometry = new THREE.SphereGeometry(50, 64, 64);
+    const moonMaterial = new THREE.MeshStandardMaterial({
+        map: moonDiffuse,
+        bumpMap: moonBump,
+        bumpScale: 3,
+        roughness: 1.0,
+        metalness: 0
+    });
+    const moon = new THREE.Mesh(moonGeometry, moonMaterial);
+    moon.position.set(400, 200, -600);
+    scene.add(moon);
+}
+
 // Create starfield with 8k texture - optimized for performance
 function createStars() {
     // Add 8k stars texture as background sphere
@@ -312,156 +348,6 @@ function createFallbackStars() {
 }
 
 // Create stars that form the word "RESUMES"
-function createResumesText() {
-    const canvas = document.createElement('canvas');
-    const ctx = canvas.getContext('2d');
-    canvas.width = 800;
-    canvas.height = 200;
-
-    ctx.font = 'bold 120px Arial';
-    ctx.fillStyle = 'white';
-    ctx.textAlign = 'center';
-    ctx.textBaseline = 'middle';
-    ctx.fillText('RESUMES', canvas.width / 2, canvas.height / 2);
-
-    const imageData = ctx.getImageData(0, 0, canvas.width, canvas.height);
-    const starPositions = [];
-
-    // Sample pixels to create star positions
-    for (let y = 0; y < canvas.height; y += 4) {
-        for (let x = 0; x < canvas.width; x += 4) {
-            const index = (y * canvas.width + x) * 4;
-            if (imageData.data[index + 3] > 128) { // If pixel is opaque enough
-                const posX = (x - canvas.width / 2) * 0.15;
-                const posY = -(y - canvas.height / 2) * 0.15;
-                starPositions.push(new THREE.Vector3(posX, -200, posY));
-            }
-        }
-    }
-
-    // Create individual star particles
-    starPositions.forEach((pos, i) => {
-        const starGeo = new THREE.SphereGeometry(0.8, 8, 8);
-        const starMat = new THREE.MeshBasicMaterial({
-            color: 0xffffff,
-            transparent: true,
-            opacity: 0
-        });
-        const star = new THREE.Mesh(starGeo, starMat);
-
-        // Random starting position
-        star.position.set(
-            (Math.random() - 0.5) * 400,
-            -200 + (Math.random() - 0.5) * 100,
-            (Math.random() - 0.5) * 400
-        );
-
-        star.userData.targetPosition = pos.clone();
-        star.userData.formed = false;
-        star.userData.twinklePhase = Math.random() * Math.PI * 2;
-
-        scene.add(star);
-        resumesStars.push(star);
-    });
-
-    // Create clickable invisible mesh for interaction
-    const textGeo = new THREE.PlaneGeometry(120, 30);
-    const textMat = new THREE.MeshBasicMaterial({
-        transparent: true,
-        opacity: 0,
-        side: THREE.DoubleSide
-    });
-    resumesTextMesh = new THREE.Mesh(textGeo, textMat);
-    resumesTextMesh.position.set(0, -200, 0);
-    resumesTextMesh.userData.isClickable = true;
-    resumesTextMesh.userData.action = 'showResumes';
-    scene.add(resumesTextMesh);
-}
-
-// Create clouds that form the word "PROJECTS"
-function createProjectsText() {
-    const textPositions = getTextPositions('PROJECTS', 120);
-
-    textPositions.forEach((pos, i) => {
-        const cloudGroup = new THREE.Group();
-
-        // Create smaller cloud puffs for text
-        for (let j = 0; j < 3; j++) {
-            const size = 3 + Math.random() * 2;
-            const cloudGeometry = new THREE.SphereGeometry(size, 12, 12);
-            const cloudMaterial = new THREE.MeshLambertMaterial({
-                color: 0xffffff,
-                transparent: true,
-                opacity: 0
-            });
-
-            const puff = new THREE.Mesh(cloudGeometry, cloudMaterial);
-            puff.position.set(
-                (Math.random() - 0.5) * 4,
-                (Math.random() - 0.5) * 2,
-                (Math.random() - 0.5) * 4
-            );
-            cloudGroup.add(puff);
-        }
-
-        // Random starting position
-        cloudGroup.position.set(
-            (Math.random() - 0.5) * 400,
-            -800 + (Math.random() - 0.5) * 100,
-            (Math.random() - 0.5) * 400
-        );
-
-        cloudGroup.userData.targetPosition = new THREE.Vector3(pos.x * 0.35, -800, pos.y * 0.35);
-        cloudGroup.userData.formed = false;
-
-        scene.add(cloudGroup);
-        projectsClouds.push(cloudGroup);
-    });
-
-    // Create clickable invisible mesh
-    const textGeo = new THREE.PlaneGeometry(140, 30);
-    const textMat = new THREE.MeshBasicMaterial({
-        transparent: true,
-        opacity: 0,
-        side: THREE.DoubleSide
-    });
-    projectsTextMesh = new THREE.Mesh(textGeo, textMat);
-    projectsTextMesh.position.set(0, -800, 0);
-    projectsTextMesh.userData.isClickable = true;
-    projectsTextMesh.userData.action = 'showProjects';
-    scene.add(projectsTextMesh);
-}
-
-// Helper function to get text positions
-function getTextPositions(text, fontSize) {
-    const canvas = document.createElement('canvas');
-    const ctx = canvas.getContext('2d');
-    canvas.width = 900;
-    canvas.height = 200;
-
-    ctx.font = `bold ${fontSize}px Arial`;
-    ctx.fillStyle = 'white';
-    ctx.textAlign = 'center';
-    ctx.textBaseline = 'middle';
-    ctx.fillText(text, canvas.width / 2, canvas.height / 2);
-
-    const imageData = ctx.getImageData(0, 0, canvas.width, canvas.height);
-    const positions = [];
-
-    for (let y = 0; y < canvas.height; y += 6) {
-        for (let x = 0; x < canvas.width; x += 6) {
-            const index = (y * canvas.width + x) * 4;
-            if (imageData.data[index + 3] > 128) {
-                positions.push({
-                    x: x - canvas.width / 2,
-                    y: -(y - canvas.height / 2)
-                });
-            }
-        }
-    }
-
-    return positions;
-}
 
 // Create rocket ship in space!
 function createRocket() {
@@ -1263,97 +1149,50 @@ function createExplosion(position) {
     }
 }
 
-// Create Earth ground with oceans and continents
+// Create Earth globe
 function createGround() {
-    // Main ground - realistic grass texture
-    const groundGeometry = new THREE.CircleGeometry(500, 64);
-
-    // Load realistic grass texture (local file)
     const textureLoader = new THREE.TextureLoader();
-    const grassTexture = textureLoader.load(
-        '/textures/grass.jpg',
-        (texture) => {
-            texture.wrapS = texture.wrapT = THREE.RepeatWrapping;
-            texture.repeat.set(20, 20); // Tile the texture
-        }
-    );
 
-    const groundMaterial = new THREE.MeshStandardMaterial({
-        map: grassTexture,
-        roughness: 0.9,
+    const earthGeometry = new THREE.SphereGeometry(500, 128, 128);
+
+    // Load earth textures
+    const earthAlbedo = textureLoader.load('/59-earth/textures/earth albedo.jpg');
+    const earthBump = textureLoader.load('/59-earth/textures/earth bump.jpg');
+    const earthClouds = textureLoader.load('/59-earth/textures/clouds earth.png');
+
+    const earthMaterial = new THREE.MeshStandardMaterial({
+        map: earthAlbedo,
+        bumpMap: earthBump,
+        bumpScale: 5,
+        roughness: 0.8,
         metalness: 0.1
     });
-    const ground = new THREE.Mesh(groundGeometry, groundMaterial);
-    ground.rotation.x = -Math.PI / 2;
-    ground.position.y = -1800;
-    ground.receiveShadow = true;
-    scene.add(ground);
 
-    // Add realistic lake patches - SMOOTH irregular shapes with curves
-    for (let i = 0; i < 12; i++) { // More water (12 instead of 6)
-        const waterSize = 60 + Math.random() * 80;
+    const earth = new THREE.Mesh(earthGeometry, earthMaterial);
+    earth.position.y = -2300; // Lower than before so pig lands on top
 
-        // Create SMOOTH irregular lake shape with bezier curves
-        const lakeShape = new THREE.Shape();
-        const points = 6 + Math.floor(Math.random() * 3); // 6-9 control points
-        const angleStep = (Math.PI * 2) / points;
+    // Rotate Earth so California is on top (37°N, 119°W)
+    // Rotate to bring 119°W longitude to face us
+    earth.rotation.y = Math.PI * (119 / 180);
+    // Tilt to bring 37°N latitude to the top
+    earth.rotation.x = Math.PI * (53 / 180);
 
-        const controlPoints = [];
-        for (let p = 0; p < points; p++) {
-            const angle = p * angleStep;
-            const radiusVar = waterSize * (0.7 + Math.random() * 0.5);
-            controlPoints.push({
-                x: Math.cos(angle) * radiusVar,
-                y: Math.sin(angle) * radiusVar
-            });
-        }
+    earth.receiveShadow = true;
+    scene.add(earth);
 
-        // Start at first point
-        lakeShape.moveTo(controlPoints[0].x, controlPoints[0].y);
-
-        // Create smooth curves between points using quadratic curves
-        for (let p = 0; p < points; p++) {
-            const current = controlPoints[p];
-            const next = controlPoints[(p + 1) % points];
-            const nextNext = controlPoints[(p + 2) % points];
-
-            // Control point is average of next and nextNext for smooth curve
-            const cpX = (next.x + nextNext.x) / 2;
-            const cpY = (next.y + nextNext.y) / 2;
-
-            lakeShape.quadraticCurveTo(next.x, next.y, cpX, cpY);
-        }
-        lakeShape.closePath();
-
-        const waterGeo = new THREE.ShapeGeometry(lakeShape, 64); // Higher segments for smooth curves
-
-        // Realistic water colors - bright beautiful blue water!
-        const isOcean = i < 3;
-        const waterMat = new THREE.MeshStandardMaterial({
-            color: isOcean ? 0x1e88e5 : 0x42a5f5, // Bright blue water
-            roughness: 0.1,
-            metalness: 0.85,
-            emissive: isOcean ? 0x0d47a1 : 0x1976d2,
-            emissiveIntensity: 0.2,
-            transparent: true,
-            opacity: 0.9
-        });
-
-        const water = new THREE.Mesh(waterGeo, waterMat);
-        water.rotation.x = -Math.PI / 2;
-        const posAngle = (i / 6) * Math.PI * 2 + Math.random() * 0.5;
-        const radius = 150 + Math.random() * 250;
-        const waterX = Math.cos(posAngle) * radius;
-        const waterZ = Math.sin(posAngle) * radius;
-        water.position.set(waterX, -1798, waterZ);
-        water.receiveShadow = true;
-        water.userData.waterPhase = Math.random() * Math.PI * 2;
-        water.userData.waterIndex = i;
-        scene.add(water);
-
-        // Track water location and size
-        waterLocations.push({ x: waterX, z: waterZ, radius: waterSize, mesh: water });
-    }
+    // Add cloud layer with same rotation
+    const cloudGeometry = new THREE.SphereGeometry(510, 128, 128);
+    const cloudMaterial = new THREE.MeshStandardMaterial({
+        map: earthClouds,
+        transparent: true,
+        opacity: 0.4,
+        depthWrite: false
+    });
+    const clouds = new THREE.Mesh(cloudGeometry, cloudMaterial);
+    clouds.position.y = -2300;
+    clouds.rotation.y = earth.rotation.y;
+    clouds.rotation.x = earth.rotation.x;
+    scene.add(clouds);
 }
 
 // Lighting
@@ -1391,15 +1230,13 @@ function init() {
     scene.add(pig);
 
     createStars();
-    createResumesText();
-    createProjectsText();
+    createSun();
+    createMoon();
     createRocket();
     createAirplane();
     createBirds();
     createClouds();
     createGround();
-    treesGroup = createTrees();
-    buildingsGroup = createHouses();
 
     // Create planes with banners
     createPlaneWithBanner('CHECK OUT MY RESUME!', new THREE.Vector3(-200, -1000, -150), Math.PI / 3);
@@ -1466,90 +1303,15 @@ function animate() {
 
     const time = Date.now() * 0.001;
 
-    // Animate stars forming "RESUMES" text
-    if (journeyStarted && scrollProgress > 0.05 && scrollProgress < 0.25) {
-        resumesStars.forEach((star, i) => {
-            if (!star.userData.formed) {
-                star.position.lerp(star.userData.targetPosition, 0.02);
-                star.material.opacity = Math.min(star.material.opacity + 0.01, 1);
-
-                const dist = star.position.distanceTo(star.userData.targetPosition);
-                if (dist < 0.5) {
-                    star.userData.formed = true;
-                }
-            } else {
-                // Twinkling effect
-                const twinkle = Math.sin(time * 3 + star.userData.twinklePhase) * 0.3 + 0.7;
-                star.material.opacity = twinkle;
-            }
-        });
-    } else if (scrollProgress >= 0.25) {
-        // Fade out stars after passing
-        resumesStars.forEach(star => {
-            star.material.opacity = Math.max(star.material.opacity - 0.02, 0);
-        });
-    }
-
-    // Animate clouds forming "PROJECTS" text
-    if (journeyStarted && scrollProgress > 0.4 && scrollProgress < 0.65) {
-        projectsClouds.forEach((cloudGroup, i) => {
-            if (!cloudGroup.userData.formed) {
-                cloudGroup.position.lerp(cloudGroup.userData.targetPosition, 0.015);
-
-                cloudGroup.children.forEach(puff => {
-                    puff.material.opacity = Math.min(puff.material.opacity + 0.008, 0.85);
-                });
-
-                const dist = cloudGroup.position.distanceTo(cloudGroup.userData.targetPosition);
-                if (dist < 1) {
-                    cloudGroup.userData.formed = true;
-                }
-            }
-        });
-    } else if (scrollProgress >= 0.65) {
-        // Fade out clouds after passing
-        projectsClouds.forEach(cloudGroup => {
-            cloudGroup.children.forEach(puff => {
-                puff.material.opacity = Math.max(puff.material.opacity - 0.01, 0);
-            });
-        });
-    }
-
-    // Show/hide interactive text overlays
-    const resumesTextOverlay = document.getElementById('resumes-text');
-    const projectsTextOverlay = document.getElementById('projects-text');
-
-    if (scrollProgress > 0.08 && scrollProgress < 0.22) {
-        resumesTextOverlay.style.opacity = '1';
-        resumesTextOverlay.style.pointerEvents = 'auto';
-        resumesTextOverlay.onclick = () => window.showResumes && window.showResumes();
-    } else {
-        resumesTextOverlay.style.opacity = '0';
-        resumesTextOverlay.style.pointerEvents = 'none';
-    }
-
-    if (scrollProgress > 0.42 && scrollProgress < 0.62) {
-        projectsTextOverlay.style.opacity = '1';
-        projectsTextOverlay.style.pointerEvents = 'auto';
-        projectsTextOverlay.onclick = () => window.showProjects && window.showProjects();
-    } else {
-        projectsTextOverlay.style.opacity = '0';
-        projectsTextOverlay.style.pointerEvents = 'none';
-    }
 
     // Pig animations with spinning as it falls
     if (pig && journeyStarted) {
-        // Position based on scroll
-        const targetY = -scrollProgress * 1800;
-        pig.position.y = Math.max(targetY, -1790); // Don't go below ground
-
-        // Debug every 60 frames (about once per second)
-        if (Math.random() < 0.016) {
-            console.log('PIG STATUS - scrollProgress:', scrollProgress.toFixed(3), 'pig.y:', pig.position.y.toFixed(1), 'visible:', pig.visible);
-        }
+        // Position based on scroll - pig lands on top of Earth sphere
+        const targetY = -scrollProgress * 2300;
+        pig.position.y = Math.max(targetY, -1800); // Lands on top of Earth (radius 500, center at -2300, so top is at -1800)
 
         // Check if just landed
-        if (scrollProgress >= 0.99 && !pigLanded) {
+        if (pig.position.y <= -1790 && !pigLanded) {
             pigLanded = true;
             pigWalkingAway = false;
             balloonsReleased = false;
@@ -1559,7 +1321,7 @@ function animate() {
         }
 
         // Check if leaving ground
-        if (scrollProgress < 0.99 && pigLanded) {
+        if (pig.position.y > -1790 && pigLanded) {
             pigLanded = false;
             pigWalkingAway = false;
             balloonsReleased = false;
@@ -1639,25 +1401,9 @@ function animate() {
     let lookAtTarget;
 
     if (pigLanded) {
-        // SMOOTH transition to final position (not instant jump)
-        const landTime = time - landingTime - 1;
-        const transitionProgress = Math.min(landTime / 3, 1); // 3 second transition
-        const easeProgress = transitionProgress * transitionProgress * (3 - 2 * transitionProgress); // Smooth ease
-
-        const startPos = new THREE.Vector3(
-            Math.sin(scrollProgress * Math.PI * 3) * 30,
-            -1765,
-            Math.cos(scrollProgress * Math.PI * 3) * 30 + 20
-        );
-        const endPos = new THREE.Vector3(0, -1750, 50); // Final overhead view
-
-        cameraOffset = new THREE.Vector3(
-            startPos.x + (endPos.x - startPos.x) * easeProgress,
-            startPos.y + (endPos.y - startPos.y) * easeProgress,
-            startPos.z + (endPos.z - startPos.z) * easeProgress
-        );
-
-        lookAtTarget = new THREE.Vector3(0, -1790, 0);
+        // Fixed camera position when landed - no more spazzing!
+        cameraOffset = new THREE.Vector3(0, -1750, 50); // Overhead view
+        lookAtTarget = new THREE.Vector3(pig.position.x, pig.position.y, pig.position.z);
     } else {
         // SPIRAL DESCENT - multiple rotations as you fall
         const spiralRotations = 3; // 3 full rotations during descent
@@ -1799,19 +1545,6 @@ function animate() {
         skyUniforms['rayleigh'].value = 2.5 + fadeIn * 0.5;
     }
 
-    // Animate water with gentle shimmer
-    waterLocations.forEach(waterData => {
-        if (waterData.mesh && waterData.mesh.material) {
-            const waterMesh = waterData.mesh;
-            // Shimmer effect - vary the emissive slightly for sparkle
-            const shimmer = Math.sin(time * 1.5 + waterMesh.userData.waterPhase) * 0.5 + 0.5;
-            waterMesh.material.emissiveIntensity = 0.15 + shimmer * 0.15;
-        }
-    });
-
-    // Hide buildings and trees until close to ground
-    if (treesGroup) treesGroup.visible = scrollProgress > 0.85;
-    if (buildingsGroup) buildingsGroup.visible = scrollProgress > 0.85;
 
     // Update sparkles
     for (let i = sparkles.length - 1; i >= 0; i--) {
