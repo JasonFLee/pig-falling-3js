@@ -1,0 +1,373 @@
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+}
+
+body {
+    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+    overflow-x: hidden;
+    background: #000;
+}
+
+.scroll-container {
+    position: relative;
+}
+
+.layer {
+    height: 100vh;
+    width: 100%;
+    position: relative;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    overflow: hidden;
+    transition: all 0.5s ease;
+}
+
+/* Space Layer */
+#space {
+    background: radial-gradient(ellipse at bottom, #1B2735 0%, #090A0F 100%);
+}
+
+.stars {
+    position: absolute;
+    width: 100%;
+    height: 100%;
+    background-image:
+        radial-gradient(2px 2px at 20px 30px, white, transparent),
+        radial-gradient(2px 2px at 60px 70px, white, transparent),
+        radial-gradient(1px 1px at 50px 50px, white, transparent),
+        radial-gradient(1px 1px at 130px 80px, white, transparent),
+        radial-gradient(2px 2px at 90px 10px, white, transparent);
+    background-repeat: repeat;
+    background-size: 200px 200px;
+    animation: twinkle 3s infinite;
+}
+
+@keyframes twinkle {
+    0%, 100% { opacity: 1; }
+    50% { opacity: 0.5; }
+}
+
+/* Thermosphere */
+#thermosphere {
+    background: linear-gradient(to bottom, #0a0e27 0%, #1a1f3a 50%, #2d1b4e 100%);
+}
+
+.aurora {
+    position: absolute;
+    width: 100%;
+    height: 50%;
+    top: 0;
+    background: linear-gradient(90deg,
+        transparent 0%,
+        rgba(0, 255, 136, 0.3) 25%,
+        rgba(0, 191, 255, 0.3) 50%,
+        rgba(138, 43, 226, 0.3) 75%,
+        transparent 100%);
+    animation: aurora-wave 8s ease-in-out infinite;
+    filter: blur(40px);
+}
+
+@keyframes aurora-wave {
+    0%, 100% {
+        transform: translateY(0) scaleY(1);
+        opacity: 0.6;
+    }
+    50% {
+        transform: translateY(50px) scaleY(1.2);
+        opacity: 0.8;
+    }
+}
+
+/* Mesosphere */
+#mesosphere {
+    background: linear-gradient(to bottom, #1a1f3a 0%, #2c3e50 100%);
+}
+
+.shooting-stars {
+    position: absolute;
+    width: 100%;
+    height: 100%;
+}
+
+.shooting-stars::before,
+.shooting-stars::after {
+    content: '⭐';
+    position: absolute;
+    font-size: 20px;
+    animation: shoot 3s linear infinite;
+}
+
+.shooting-stars::before {
+    top: 20%;
+    left: 100%;
+    animation-delay: 0s;
+}
+
+.shooting-stars::after {
+    top: 60%;
+    left: 100%;
+    animation-delay: 1.5s;
+}
+
+@keyframes shoot {
+    0% {
+        transform: translateX(0) translateY(0);
+        opacity: 1;
+    }
+    100% {
+        transform: translateX(-150vw) translateY(100px);
+        opacity: 0;
+    }
+}
+
+/* Stratosphere */
+#stratosphere {
+    background: linear-gradient(to bottom, #2c3e50 0%, #3498db 50%, #87ceeb 100%);
+}
+
+.weather-balloon {
+    position: absolute;
+    font-size: 40px;
+    top: 30%;
+    left: 20%;
+    animation: float 6s ease-in-out infinite;
+}
+
+.jet {
+    position: absolute;
+    font-size: 50px;
+    top: 50%;
+    right: -100px;
+    animation: fly-by 8s linear infinite;
+}
+
+@keyframes float {
+    0%, 100% { transform: translateY(0); }
+    50% { transform: translateY(-30px); }
+}
+
+@keyframes fly-by {
+    0% {
+        right: -100px;
+        top: 50%;
+    }
+    100% {
+        right: 100%;
+        top: 45%;
+    }
+}
+
+/* Troposphere */
+#troposphere {
+    background: linear-gradient(to bottom, #87ceeb 0%, #b8d4e8 100%);
+}
+
+.clouds {
+    position: absolute;
+    font-size: 80px;
+    top: 20%;
+    left: 10%;
+    animation: drift 15s linear infinite;
+    opacity: 0.8;
+}
+
+.birds {
+    position: absolute;
+    font-size: 30px;
+    top: 40%;
+    right: 20%;
+    animation: flap 2s ease-in-out infinite;
+}
+
+@keyframes drift {
+    0% { transform: translateX(0); }
+    100% { transform: translateX(100vw); }
+}
+
+@keyframes flap {
+    0%, 100% { transform: translateY(0) rotate(0deg); }
+    25% { transform: translateY(-10px) rotate(-5deg); }
+    75% { transform: translateY(10px) rotate(5deg); }
+}
+
+/* Landing */
+#landing {
+    background: linear-gradient(to bottom, #b8d4e8 0%, #90ee90 50%, #7cb342 100%);
+}
+
+.mountains {
+    position: absolute;
+    bottom: 30%;
+    left: 0;
+    right: 0;
+    font-size: 100px;
+    text-align: center;
+    opacity: 0.6;
+}
+
+.trees {
+    position: absolute;
+    bottom: 20%;
+    left: 0;
+    right: 0;
+    font-size: 60px;
+    text-align: center;
+    letter-spacing: 50px;
+}
+
+.meadow {
+    position: absolute;
+    bottom: 0;
+    width: 100%;
+    height: 30%;
+    background: linear-gradient(to bottom, #7cb342 0%, #689f38 100%);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-direction: column;
+}
+
+.grass {
+    position: absolute;
+    bottom: 10%;
+    font-size: 40px;
+    letter-spacing: 30px;
+    animation: sway 2s ease-in-out infinite;
+}
+
+@keyframes sway {
+    0%, 100% { transform: rotate(-2deg); }
+    50% { transform: rotate(2deg); }
+}
+
+/* Pig Animation */
+.pig-container {
+    position: fixed;
+    top: 10%;
+    left: 50%;
+    transform: translateX(-50%);
+    z-index: 100;
+    transition: all 0.3s ease;
+}
+
+.pig {
+    font-size: 80px;
+    animation: spin-fall 4s ease-in-out infinite;
+    filter: drop-shadow(0 0 20px rgba(255, 192, 203, 0.5));
+    transition: all 0.5s ease;
+}
+
+.pig.landed {
+    position: relative;
+    font-size: 100px;
+    animation: bounce 1s ease-out;
+    filter: drop-shadow(0 10px 20px rgba(0, 0, 0, 0.3));
+}
+
+@keyframes spin-fall {
+    0%, 100% {
+        transform: rotate(-10deg) translateY(0);
+    }
+    25% {
+        transform: rotate(5deg) translateY(10px);
+    }
+    50% {
+        transform: rotate(-5deg) translateY(0);
+    }
+    75% {
+        transform: rotate(10deg) translateY(10px);
+    }
+}
+
+@keyframes bounce {
+    0% {
+        transform: translateY(-200px) scale(0.8);
+        opacity: 0;
+    }
+    50% {
+        transform: translateY(0) scale(1.1);
+    }
+    70% {
+        transform: translateY(-20px) scale(0.95);
+    }
+    85% {
+        transform: translateY(0) scale(1.02);
+    }
+    100% {
+        transform: translateY(0) scale(1);
+        opacity: 1;
+    }
+}
+
+/* Layer Info */
+.layer-info {
+    position: absolute;
+    bottom: 50px;
+    left: 50%;
+    transform: translateX(-50%);
+    text-align: center;
+    color: white;
+    text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.5);
+    z-index: 10;
+    opacity: 0;
+    animation: fade-in 1s ease-in forwards;
+}
+
+.layer-info h2 {
+    font-size: 3em;
+    margin-bottom: 10px;
+    font-weight: bold;
+}
+
+.layer-info p {
+    font-size: 1.5em;
+    font-style: italic;
+}
+
+@keyframes fade-in {
+    from { opacity: 0; transform: translateX(-50%) translateY(20px); }
+    to { opacity: 1; transform: translateX(-50%) translateY(0); }
+}
+
+/* Scroll Indicator */
+.scroll-indicator {
+    position: fixed;
+    bottom: 20px;
+    left: 50%;
+    transform: translateX(-50%);
+    z-index: 200;
+    color: white;
+    font-size: 1.2em;
+    text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.7);
+    animation: pulse 2s ease-in-out infinite;
+    background: rgba(0, 0, 0, 0.3);
+    padding: 10px 20px;
+    border-radius: 20px;
+}
+
+@keyframes pulse {
+    0%, 100% { opacity: 1; transform: translateX(-50%) translateY(0); }
+    50% { opacity: 0.6; transform: translateX(-50%) translateY(5px); }
+}
+
+/* Responsive Design */
+@media (max-width: 768px) {
+    .pig {
+        font-size: 60px;
+    }
+
+    .layer-info h2 {
+        font-size: 2em;
+    }
+
+    .layer-info p {
+        font-size: 1em;
+    }
+
+    .scroll-indicator {
+        font-size: 1em;
+    }
+}

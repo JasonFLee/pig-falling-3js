@@ -1,0 +1,268 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Jason's Interactive Portfolio - A Pig's Journey</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Arial', sans-serif;
+            overflow: hidden;
+            background: #000;
+        }
+
+        #canvas-container {
+            width: 100vw;
+            height: 100vh;
+            position: fixed;
+            top: 0;
+            left: 0;
+        }
+
+
+        /* Interactive Text Overlays */
+        #resumes-text {
+            position: fixed;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            font-size: 80px;
+            font-weight: bold;
+            color: white;
+            text-shadow: 0 0 20px rgba(255, 255, 255, 0.8), 0 0 40px rgba(100, 200, 255, 0.5);
+            cursor: pointer;
+            opacity: 0;
+            z-index: 500;
+            transition: all 0.3s ease;
+        }
+
+        #resumes-text:hover {
+            transform: translate(-50%, -50%) scale(1.1);
+            text-shadow: 0 0 30px rgba(255, 255, 255, 1), 0 0 60px rgba(100, 200, 255, 0.8);
+        }
+
+        #projects-text {
+            position: fixed;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            font-size: 80px;
+            font-weight: bold;
+            color: white;
+            text-shadow: 0 0 20px rgba(255, 255, 255, 0.8), 0 0 40px rgba(100, 200, 255, 0.5);
+            cursor: pointer;
+            opacity: 0;
+            z-index: 500;
+            transition: all 0.3s ease;
+        }
+
+        #projects-text:hover {
+            transform: translate(-50%, -50%) scale(1.1);
+            text-shadow: 0 0 30px rgba(255, 255, 255, 1), 0 0 60px rgba(100, 200, 255, 0.8);
+        }
+
+
+        /* Modal for Resumes/Projects/Essays */
+        #modal {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100vw;
+            height: 100vh;
+            background: rgba(0, 0, 0, 0.9);
+            z-index: 2000;
+            display: none;
+            justify-content: center;
+            align-items: center;
+            opacity: 0;
+            transition: opacity 0.3s ease;
+        }
+
+        #modal.active {
+            display: flex;
+            opacity: 1;
+        }
+
+        .modal-content {
+            background: white;
+            padding: 40px;
+            border-radius: 20px;
+            max-width: 800px;
+            max-height: 80vh;
+            overflow-y: auto;
+            position: relative;
+        }
+
+        .modal-close {
+            position: absolute;
+            top: 20px;
+            right: 20px;
+            font-size: 30px;
+            cursor: pointer;
+            color: #666;
+            background: none;
+            border: none;
+        }
+
+        .modal-close:hover {
+            color: #000;
+        }
+
+        .modal-items {
+            display: flex;
+            flex-direction: column;
+            gap: 20px;
+        }
+
+        .modal-item {
+            padding: 20px;
+            background: #f5f5f5;
+            border-radius: 10px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+
+        .modal-item:hover {
+            background: #e0e0e0;
+            transform: translateX(10px);
+        }
+
+        .modal-item h3 {
+            margin-bottom: 10px;
+            color: #667eea;
+        }
+
+        #scroll-hint {
+            position: fixed;
+            bottom: 20px;
+            left: 50%;
+            transform: translateX(-50%);
+            color: white;
+            font-size: 16px;
+            z-index: 99;
+            animation: pulse 2s infinite;
+            text-shadow: 0 0 10px rgba(0, 0, 0, 0.8);
+        }
+
+        @keyframes pulse {
+            0%, 100% { opacity: 1; transform: translateX(-50%) translateY(0); }
+            50% { opacity: 0.5; transform: translateX(-50%) translateY(5px); }
+        }
+
+        #loading {
+            position: fixed;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            color: white;
+            font-size: 24px;
+            z-index: 200;
+            text-align: center;
+        }
+
+        .loading-spinner {
+            border: 4px solid rgba(255, 255, 255, 0.3);
+            border-top: 4px solid white;
+            border-radius: 50%;
+            width: 50px;
+            height: 50px;
+            animation: spin 1s linear infinite;
+            margin: 20px auto;
+        }
+
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+    </style>
+</head>
+<body>
+    <div id="loading">
+        <div class="loading-spinner"></div>
+        <p>Loading your interactive portfolio...</p>
+    </div>
+
+
+    <!-- Interactive Text Elements -->
+    <div id="resumes-text">RESUMES</div>
+    <div id="projects-text">PROJECTS</div>
+
+
+    <!-- Modal for content -->
+    <div id="modal">
+        <div class="modal-content">
+            <button class="modal-close" onclick="closeModal()">&times;</button>
+            <div id="modal-body"></div>
+        </div>
+    </div>
+
+    <div id="canvas-container"></div>
+    <div id="scroll-hint">↓ Scroll down to see the pig fall ↓</div>
+
+    <script type="module" src="/main.js"></script>
+    <script>
+        // Auto-start journey immediately
+        window.addEventListener('load', () => {
+            setTimeout(() => {
+                window.dispatchEvent(new CustomEvent('journeyStart'));
+            }, 100);
+        });
+
+        // Modal functions
+        function closeModal() {
+            document.getElementById('modal').classList.remove('active');
+        }
+
+        function showResumes() {
+            const modalBody = document.getElementById('modal-body');
+            modalBody.innerHTML = `
+                <h2>My Resumes</h2>
+                <div class="modal-items">
+                    <div class="modal-item">
+                        <h3>Software Engineer Resume</h3>
+                        <p>Full-stack development experience with modern web technologies...</p>
+                    </div>
+                    <div class="modal-item">
+                        <h3>Creative Resume</h3>
+                        <p>Design and creative projects showcasing artistic abilities...</p>
+                    </div>
+                    <div class="modal-item">
+                        <h3>Academic Resume</h3>
+                        <p>Educational background and research experience...</p>
+                    </div>
+                </div>
+            `;
+            document.getElementById('modal').classList.add('active');
+        }
+
+        function showProjects() {
+            const modalBody = document.getElementById('modal-body');
+            modalBody.innerHTML = `
+                <h2>My Projects</h2>
+                <div class="modal-items">
+                    <div class="modal-item">
+                        <h3>Project Alpha</h3>
+                        <p>An innovative web application using Three.js and modern frameworks...</p>
+                    </div>
+                    <div class="modal-item">
+                        <h3>Project Beta</h3>
+                        <p>Mobile-first responsive design with cutting-edge features...</p>
+                    </div>
+                    <div class="modal-item">
+                        <h3>Project Gamma</h3>
+                        <p>Full-stack application with real-time data processing...</p>
+                    </div>
+                </div>
+            `;
+            document.getElementById('modal').classList.add('active');
+        }
+
+    </script>
+</body>
+</html>
