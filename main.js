@@ -55,6 +55,50 @@ let journeyStarted = false;
 let pigVelocityY = 0; // Pig's falling velocity
 const gravity = -0.5; // Gravity strength
 
+// Preload ALL textures immediately to prevent lag spike
+const textureLoader = new THREE.TextureLoader();
+const earthTexturesPreload = {
+    albedo: textureLoader.load('/59-earth/textures/earth albedo.jpg',
+        () => console.log('Earth albedo loaded'),
+        undefined,
+        (err) => console.error('Earth albedo error:', err)
+    ),
+    bump: textureLoader.load('/59-earth/textures/earth bump.jpg',
+        () => console.log('Earth bump loaded'),
+        undefined,
+        (err) => console.error('Earth bump error:', err)
+    ),
+    clouds: textureLoader.load('/59-earth/textures/clouds earth.png',
+        () => console.log('Earth clouds loaded'),
+        undefined,
+        (err) => console.error('Earth clouds error:', err)
+    )
+};
+const moonTexturesPreload = {
+    diffuse: textureLoader.load('/44-moon-photorealistic-2k (extract.me)/Textures/Diffuse_2K.png', (texture) => {
+        texture.wrapS = THREE.ClampToEdgeWrapping;
+        texture.wrapT = THREE.ClampToEdgeWrapping;
+        texture.minFilter = THREE.LinearFilter;
+        console.log('Moon diffuse loaded');
+    }, undefined, (err) => console.error('Moon diffuse error:', err)),
+    bump: textureLoader.load('/44-moon-photorealistic-2k (extract.me)/Textures/Bump_2K.png', (texture) => {
+        texture.wrapS = THREE.ClampToEdgeWrapping;
+        texture.wrapT = THREE.ClampToEdgeWrapping;
+        texture.minFilter = THREE.LinearFilter;
+        console.log('Moon bump loaded');
+    }, undefined, (err) => console.error('Moon bump error:', err))
+};
+const sunTexturePreload = textureLoader.load('/sol/2k_sun.jpg',
+    () => console.log('Sun texture loaded'),
+    undefined,
+    (err) => console.error('Sun texture error:', err)
+);
+const starsTexturePreload = textureLoader.load('/8k_stars_milky_way.jpg',
+    () => console.log('Stars texture loaded'),
+    undefined,
+    (err) => console.error('Stars texture error:', err)
+);
+
 // Layer information - extended cloud layer
 const layerInfo = [
     { name: "Outer Space", desc: "The vast blackness filled with distant stars", start: 0, end: 0.15 },
@@ -241,18 +285,17 @@ function createBalloons() {
 
 // Create sun
 function createSun() {
-    const textureLoader = new THREE.TextureLoader();
-    const sunTexture = textureLoader.load('/sol/2k_sun.jpg');
-
-    const sunGeometry = new THREE.SphereGeometry(200, 64, 64);
+    const sunGeometry = new THREE.SphereGeometry(150, 32, 32); // Smaller geometry for performance
     const sunMaterial = new THREE.MeshBasicMaterial({
-        map: sunTexture,
-        color: 0xffffff, // Full white to show texture properly
+        map: sunTexturePreload,
+        color: 0xffffaa, // Bright yellow-white
     });
     const sun = new THREE.Mesh(sunGeometry, sunMaterial);
-    // Position sun closer and to the left side, visible from start
-    sun.position.set(-500, 300, -400);
+    // Position sun closer to camera and to the right
+    sun.position.set(400, 200, -200);
     scene.add(sun);
+
+    console.log('Sun created at position:', sun.position);
 
     // Add sun light
     const sunLight = new THREE.PointLight(0xffffcc, 3, 5000);
@@ -262,47 +305,35 @@ function createSun() {
 
 // Create moon
 function createMoon() {
-    const textureLoader = new THREE.TextureLoader();
-    const moonDiffuse = textureLoader.load('/44-moon-photorealistic-2k (extract.me)/Textures/Diffuse_2K.png');
-    const moonBump = textureLoader.load('/44-moon-photorealistic-2k (extract.me)/Textures/Bump_2K.png');
-
-    const moonGeometry = new THREE.SphereGeometry(50, 64, 64);
+    const moonGeometry = new THREE.SphereGeometry(50, 32, 32); // Lower poly for performance
     const moonMaterial = new THREE.MeshStandardMaterial({
-        map: moonDiffuse,
-        bumpMap: moonBump,
-        bumpScale: 3,
+        map: moonTexturesPreload.diffuse,
+        bumpMap: moonTexturesPreload.bump,
+        bumpScale: 2,
         roughness: 1.0,
         metalness: 0
     });
     const moon = new THREE.Mesh(moonGeometry, moonMaterial);
-    moon.position.set(400, 200, -600);
+    moon.position.set(-350, 150, -500);
     scene.add(moon);
+
+    console.log('Moon created at position:', moon.position);
+    console.log('Moon textures loaded:', moonTexturesPreload.diffuse, moonTexturesPreload.bump);
 }
 
 // Create starfield with 8k texture - optimized for performance
 function createStars() {
-    // Add 8k stars texture as background sphere
-    const textureLoader = new THREE.TextureLoader();
-    textureLoader.load(
-        '/8k_stars_milky_way.jpg',
-        (texture) => {
-            const starSphereGeometry = new THREE.SphereGeometry(2500, 64, 64);
-            const starSphereMaterial = new THREE.MeshBasicMaterial({
-                map: texture,
-                side: THREE.BackSide,
-                transparent: true,
-                opacity: 1
-            });
-            const starSphere = new THREE.Mesh(starSphereGeometry, starSphereMaterial);
-            scene.add(starSphere);
-            particles.push(starSphere);
-        },
-        undefined,
-        (error) => {
-            console.warn('Could not load 8k stars texture, using fallback stars');
-            createFallbackStars();
-        }
-    );
+    // Add 8k stars texture as background sphere (using preloaded texture)
+    const starSphereGeometry = new THREE.SphereGeometry(2500, 64, 64);
+    const starSphereMaterial = new THREE.MeshBasicMaterial({
+        map: starsTexturePreload,
+        side: THREE.BackSide,
+        transparent: true,
+        opacity: 1
+    });
+    const starSphere = new THREE.Mesh(starSphereGeometry, starSphereMaterial);
+    scene.add(starSphere);
+    particles.push(starSphere);
 
     // Also create some additional particle stars for depth
     createFallbackStars();
@@ -746,64 +777,26 @@ function createBirds() {
     atmosphereLayers.push({ type: 'birds', group: birdGroup });
 }
 
-// Load cloud OBJ model
+// Load cloud OBJ model - DISABLED to reduce lag
 function loadCloudObj() {
-    const objLoader = new OBJLoader();
-    objLoader.load(
-        '/uploads_files_2155451_cloud.obj',
-        (obj) => {
-            // Create multiple cloud instances from the OBJ
-            for (let i = 0; i < 15; i++) {
-                const cloudClone = obj.clone();
-
-                // Apply white material
-                cloudClone.traverse((child) => {
-                    if (child.isMesh) {
-                        child.material = new THREE.MeshLambertMaterial({
-                            color: 0xffffff,
-                            transparent: true,
-                            opacity: 0.8
-                        });
-                        child.castShadow = false;
-                        child.receiveShadow = false;
-                    }
-                });
-
-                // Random position in troposphere
-                cloudClone.position.set(
-                    (Math.random() - 0.5) * 600,
-                    -1200 + Math.random() * 100,
-                    (Math.random() - 0.5) * 600
-                );
-
-                // Random scale and rotation
-                const scale = 15 + Math.random() * 10;
-                cloudClone.scale.set(scale, scale * 0.6, scale);
-                cloudClone.rotation.y = Math.random() * Math.PI * 2;
-
-                scene.add(cloudClone);
-                atmosphereLayers.push({ type: 'cloudObj', group: cloudClone });
-            }
-        },
-        undefined,
-        (error) => {
-            console.warn('Could not load cloud OBJ, using procedural clouds only');
-        }
-    );
+    // Commented out to improve performance and reduce lag spikes
+    // Using procedural clouds only
+    console.log('Cloud OBJ loading disabled for performance');
 }
 
-// Create volumetric clouds with better detail
+// Create volumetric clouds with better detail - OPTIMIZED
 function createClouds() {
     const cloudGroup = new THREE.Group();
 
-    for (let i = 0; i < 40; i++) {
+    // Reduced from 40 to 25 for better performance
+    for (let i = 0; i < 25; i++) {
         const cloud = new THREE.Group();
 
-        // Fluffy clouds - optimized for performance
-        const puffCount = 6 + Math.floor(Math.random() * 4);
+        // Reduced puff count for performance
+        const puffCount = 4 + Math.floor(Math.random() * 3);
         for (let j = 0; j < puffCount; j++) {
             const size = 16 + Math.random() * 22;
-            const cloudGeometry = new THREE.SphereGeometry(size, 12, 12); // Lower poly
+            const cloudGeometry = new THREE.SphereGeometry(size, 8, 8); // Even lower poly
             const cloudMaterial = new THREE.MeshLambertMaterial({ // Cheaper material
                 color: 0xffffff,
                 transparent: true,
@@ -839,15 +832,15 @@ function createClouds() {
     scene.add(cloudGroup);
     atmosphereLayers.push({ type: 'clouds', group: cloudGroup });
 
-    // Add ground-level clouds that stay visible at Earth
+    // Add ground-level clouds - reduced from 20 to 12
     const groundClouds = new THREE.Group();
-    for (let i = 0; i < 20; i++) {
+    for (let i = 0; i < 12; i++) {
         const cloud = new THREE.Group();
 
-        const puffCount = 5 + Math.floor(Math.random() * 3);
+        const puffCount = 4 + Math.floor(Math.random() * 2);
         for (let j = 0; j < puffCount; j++) {
             const size = 22 + Math.random() * 28;
-            const cloudGeometry = new THREE.SphereGeometry(size, 12, 12); // Lower poly
+            const cloudGeometry = new THREE.SphereGeometry(size, 8, 8); // Lower poly
             const cloudMaterial = new THREE.MeshLambertMaterial({ // Cheaper material
                 color: 0xffffff,
                 transparent: true,
@@ -1244,50 +1237,42 @@ function createExplosion(position) {
     }
 }
 
-// Create Earth globe
+// Create Earth globe - OPTIMIZED FOR PERFORMANCE
 function createGround() {
-    const textureLoader = new THREE.TextureLoader();
+    console.log('Creating Earth...');
+    // MUCH lower poly count to eliminate lag - 32 segments instead of 64
+    const earthGeometry = new THREE.SphereGeometry(500, 32, 32);
 
-    const earthGeometry = new THREE.SphereGeometry(500, 128, 128);
-
-    // Load earth textures
-    const earthAlbedo = textureLoader.load('/59-earth/textures/earth albedo.jpg');
-    const earthBump = textureLoader.load('/59-earth/textures/earth bump.jpg');
-    const earthClouds = textureLoader.load('/59-earth/textures/clouds earth.png');
-
-    const earthMaterial = new THREE.MeshStandardMaterial({
-        map: earthAlbedo,
-        bumpMap: earthBump,
-        bumpScale: 5,
-        roughness: 0.8,
-        metalness: 0.1
+    // Use preloaded earth textures - simplified material
+    const earthMaterial = new THREE.MeshBasicMaterial({
+        map: earthTexturesPreload.albedo,
+        // Removed bump map to reduce rendering cost
     });
 
     const earth = new THREE.Mesh(earthGeometry, earthMaterial);
-    earth.position.y = -2300; // Lower than before so pig lands on top
+    earth.position.y = -2300;
 
     // Rotate Earth so California is on top (37°N, 119°W)
-    // Rotate to bring 119°W longitude to the top (west is negative, so we add π to flip)
     earth.rotation.y = -Math.PI * (119 / 180) + Math.PI;
-    // Tilt to bring 37°N latitude to the top (90 - 37 = 53 degrees tilt)
     earth.rotation.x = -Math.PI * (53 / 180);
 
-    earth.receiveShadow = true;
     scene.add(earth);
+    console.log('Earth added to scene');
 
-    // Add cloud layer with same rotation
-    const cloudGeometry = new THREE.SphereGeometry(510, 128, 128);
-    const cloudMaterial = new THREE.MeshStandardMaterial({
-        map: earthClouds,
+    // Add cloud layer - also simplified
+    const cloudGeometry = new THREE.SphereGeometry(510, 32, 32);
+    const cloudMaterial = new THREE.MeshBasicMaterial({
+        map: earthTexturesPreload.clouds,
         transparent: true,
         opacity: 0.4,
         depthWrite: false
     });
     const clouds = new THREE.Mesh(cloudGeometry, cloudMaterial);
     clouds.position.y = -2300;
-    clouds.rotation.y = earth.rotation.y; // Match Earth rotation
-    clouds.rotation.x = earth.rotation.x; // Match Earth rotation
+    clouds.rotation.y = earth.rotation.y;
+    clouds.rotation.x = earth.rotation.x;
     scene.add(clouds);
+    console.log('Earth clouds added to scene');
 }
 
 // Lighting
@@ -1401,11 +1386,25 @@ function animate() {
     // Pig animations with spinning as it falls
     if (pig && journeyStarted) {
         // Position based on scroll - pig lands on top of Earth sphere
+        // Earth radius is 500, center at -2300, so surface is at -1800
+        const earthSurfaceY = -1800;
         const targetY = -scrollProgress * 2300;
-        pig.position.y = Math.max(targetY, -1800); // Lands on top of Earth (radius 500, center at -2300, so top is at -1800)
 
-        // Check if just landed
-        if (pig.position.y <= -1790 && !pigLanded) {
+        // Gentle deceleration as approaching surface
+        let actualY;
+        if (targetY < earthSurfaceY + 50) {
+            // Slow down in last 50 units
+            const distanceFromSurface = Math.max(0, earthSurfaceY - targetY);
+            const slowdownFactor = Math.min(distanceFromSurface / 50, 1);
+            actualY = targetY + slowdownFactor * 20; // Gentle cushion
+        } else {
+            actualY = targetY;
+        }
+
+        pig.position.y = Math.max(actualY, earthSurfaceY); // Touch surface gently
+
+        // Check if just landed (when touching surface)
+        if (pig.position.y <= earthSurfaceY + 2 && !pigLanded) {
             pigLanded = true;
             pigWalkingAway = false;
             balloonsReleased = false;
@@ -1415,7 +1414,7 @@ function animate() {
         }
 
         // Check if leaving ground
-        if (pig.position.y > -1790 && pigLanded) {
+        if (pig.position.y > earthSurfaceY + 10 && pigLanded) {
             pigLanded = false;
             pigWalkingAway = false;
             balloonsReleased = false;
@@ -1436,7 +1435,7 @@ function animate() {
         if (pigWalkingAway) {
             // Float QUICKLY UP to space! (balloons lifting pig away)
             const floatTime = time - landingTime - 1; // Time since starting to float
-            pig.position.y = -1790 + floatTime * 3; // Start at ground, float up quickly
+            pig.position.y = earthSurfaceY + floatTime * 3; // Start at ground, float up quickly
             pig.rotation.y += 0.02; // Gentle spin
 
             // Gentle swaying motion as it rises

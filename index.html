@@ -169,16 +169,18 @@
 
     <script type="module" src="/main.js"></script>
     <script>
-        // Auto-start journey immediately
+        // Auto-start journey and music
         window.addEventListener('load', () => {
+            const audio = document.getElementById('background-music');
+            audio.volume = 0.3; // Set volume to 30%
+
             setTimeout(() => {
-                // Play audio (handle browser autoplay restrictions)
-                const audio = document.getElementById('background-music');
-                audio.volume = 0.5; // Set volume to 50%
+                // Try to autoplay music
                 audio.play().catch(e => {
-                    console.log('Autoplay blocked, waiting for user interaction');
-                    // If autoplay is blocked, play on first user interaction
+                    console.log('Autoplay blocked by browser - interact with page to start music');
+                    // Play on any user interaction
                     document.addEventListener('click', () => audio.play(), { once: true });
+                    document.addEventListener('wheel', () => audio.play(), { once: true });
                 });
 
                 window.dispatchEvent(new CustomEvent('journeyStart'));
