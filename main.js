@@ -1623,7 +1623,7 @@ function animate() {
 
 // Click to auto-descend smoothly
 let isDescending = false;
-let descentSpeed = 0.0008; // Smooth constant speed
+let descentSpeed = 0.0003; // Much slower smooth constant speed
 
 window.addEventListener('click', (e) => {
     if (!journeyStarted) return;
@@ -1647,7 +1647,7 @@ window.addEventListener('wheel', (e) => {
     // Manual scroll pauses auto-descent
     isDescending = false;
 
-    scrollVelocity += e.deltaY * 0.00006;
+    scrollVelocity += e.deltaY * 0.00002; // Slower scroll wheel speed
     scrollVelocity = Math.max(-0.01, Math.min(0.01, scrollVelocity));
 });
 
