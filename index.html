@@ -162,11 +162,25 @@
     <div id="canvas-container"></div>
     <div id="scroll-hint">↓ Scroll down to see the pig fall ↓</div>
 
+    <!-- Frank Ocean Music -->
+    <audio id="background-music" autoplay loop>
+        <source src="/Frank Ocean - Pink  White(instrumental).mp3" type="audio/mpeg">
+    </audio>
+
     <script type="module" src="/main.js"></script>
     <script>
         // Auto-start journey immediately
         window.addEventListener('load', () => {
             setTimeout(() => {
+                // Play audio (handle browser autoplay restrictions)
+                const audio = document.getElementById('background-music');
+                audio.volume = 0.5; // Set volume to 50%
+                audio.play().catch(e => {
+                    console.log('Autoplay blocked, waiting for user interaction');
+                    // If autoplay is blocked, play on first user interaction
+                    document.addEventListener('click', () => audio.play(), { once: true });
+                });
+
                 window.dispatchEvent(new CustomEvent('journeyStart'));
             }, 100);
         });

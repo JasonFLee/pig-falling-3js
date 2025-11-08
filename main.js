@@ -347,6 +347,103 @@ function createFallbackStars() {
 
 // Create stars that form the word "RESUMES"
 
+// Create rocket with welcome banner and pig image
+function createRocketWithBanner() {
+    const rocketGroup = new THREE.Group();
+
+    // Rocket body
+    const bodyGeo = new THREE.CylinderGeometry(2, 2, 10, 16);
+    const bodyMat = new THREE.MeshStandardMaterial({
+        color: 0xff0000,
+        metalness: 0.9,
+        roughness: 0.2
+    });
+    const body = new THREE.Mesh(bodyGeo, bodyMat);
+    body.position.y = 5;
+    body.rotation.z = Math.PI / 2;
+    rocketGroup.add(body);
+
+    // Rocket nose cone
+    const noseGeo = new THREE.ConeGeometry(2, 4, 16);
+    const noseMat = new THREE.MeshStandardMaterial({
+        color: 0xffffff,
+        metalness: 0.8,
+        roughness: 0.2
+    });
+    const nose = new THREE.Mesh(noseGeo, noseMat);
+    nose.position.set(10, 5, 0);
+    nose.rotation.z = -Math.PI / 2;
+    rocketGroup.add(nose);
+
+    // Flames
+    const flameGeo = new THREE.ConeGeometry(1.5, 4, 8);
+    const flameMat = new THREE.MeshBasicMaterial({
+        color: 0xff6600,
+        transparent: true,
+        opacity: 0.8
+    });
+    const flame = new THREE.Mesh(flameGeo, flameMat);
+    flame.position.set(-2, 5, 0);
+    flame.rotation.z = Math.PI / 2;
+    rocketGroup.add(flame);
+
+    // Banner with pig.jpg texture
+    const textureLoader = new THREE.TextureLoader();
+    const pigTexture = textureLoader.load('/pig.jpg');
+
+    const bannerGeo = new THREE.PlaneGeometry(60, 20);
+    const bannerMat = new THREE.MeshBasicMaterial({
+        color: 0xffffff,
+        side: THREE.DoubleSide
+    });
+    const banner = new THREE.Mesh(bannerGeo, bannerMat);
+    banner.position.set(-35, 5, 0);
+    rocketGroup.add(banner);
+
+    // Add pig image to banner (left side)
+    const pigPlaneGeo = new THREE.PlaneGeometry(15, 15);
+    const pigPlaneMat = new THREE.MeshBasicMaterial({
+        map: pigTexture,
+        transparent: true,
+        side: THREE.DoubleSide
+    });
+    const pigPlane = new THREE.Mesh(pigPlaneGeo, pigPlaneMat);
+    pigPlane.position.set(-45, 5, 0.1);
+    rocketGroup.add(pigPlane);
+
+    // Create text using canvas
+    const canvas = document.createElement('canvas');
+    canvas.width = 1024;
+    canvas.height = 256;
+    const ctx = canvas.getContext('2d');
+    ctx.fillStyle = '#ff0000';
+    ctx.font = 'bold 80px Arial';
+    ctx.textAlign = 'center';
+    ctx.textBaseline = 'middle';
+    ctx.fillText('WELCOME TO MY WEBSITE!', 512, 128);
+
+    const textTexture = new THREE.CanvasTexture(canvas);
+    const textGeo = new THREE.PlaneGeometry(50, 12);
+    const textMat = new THREE.MeshBasicMaterial({
+        map: textTexture,
+        transparent: true,
+        side: THREE.DoubleSide
+    });
+    const textMesh = new THREE.Mesh(textGeo, textMat);
+    textMesh.position.set(-25, 5, 0.1);
+    rocketGroup.add(textMesh);
+
+    // Position to shoot across screen early in journey
+    rocketGroup.position.set(-400, -100, 100);
+    rocketGroup.rotation.y = Math.PI / 6;
+
+    rocketGroup.userData.isRocketBanner = true;
+    rocketGroup.userData.velocity = new THREE.Vector3(15, 2, -3);
+
+    scene.add(rocketGroup);
+    atmosphereLayers.push({ type: 'rocketBanner', group: rocketGroup });
+}
+
 // Create rocket ship in space!
 function createRocket() {
     const rocketGroup = new THREE.Group();
@@ -1170,10 +1267,10 @@ function createGround() {
     earth.position.y = -2300; // Lower than before so pig lands on top
 
     // Rotate Earth so California is on top (37°N, 119°W)
-    // Rotate to bring 119°W longitude to face us
-    earth.rotation.y = Math.PI * (119 / 180);
-    // Tilt to bring 37°N latitude to the top
-    earth.rotation.x = Math.PI * (53 / 180);
+    // Rotate to bring 119°W longitude to the top (west is negative, so we add π to flip)
+    earth.rotation.y = -Math.PI * (119 / 180) + Math.PI;
+    // Tilt to bring 37°N latitude to the top (90 - 37 = 53 degrees tilt)
+    earth.rotation.x = -Math.PI * (53 / 180);
 
     earth.receiveShadow = true;
     scene.add(earth);
@@ -1188,8 +1285,8 @@ function createGround() {
     });
     const clouds = new THREE.Mesh(cloudGeometry, cloudMaterial);
     clouds.position.y = -2300;
-    clouds.rotation.y = earth.rotation.y;
-    clouds.rotation.x = earth.rotation.x;
+    clouds.rotation.y = earth.rotation.y; // Match Earth rotation
+    clouds.rotation.x = earth.rotation.x; // Match Earth rotation
     scene.add(clouds);
 }
 
@@ -1236,9 +1333,8 @@ function init() {
     createClouds();
     createGround();
 
-    // Create planes with banners
-    createPlaneWithBanner('CHECK OUT MY RESUME!', new THREE.Vector3(-200, -1000, -150), Math.PI / 3);
-    createPlaneWithBanner('HIRE ME!', new THREE.Vector3(250, -1100, -200), -Math.PI / 4);
+    // Create rocket with banner
+    createRocketWithBanner();
     createPlaneWithBanner('PORTFOLIO 2024', new THREE.Vector3(-180, -1200, 180), Math.PI / 2);
 
     setupLighting();
