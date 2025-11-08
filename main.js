@@ -2,6 +2,7 @@ import * as THREE from 'three';
 import { Sky } from 'three/examples/jsm/objects/Sky.js';
 import { OBJLoader } from 'three/examples/jsm/loaders/OBJLoader.js';
 import { MTLLoader } from 'three/examples/jsm/loaders/MTLLoader.js';
+import { FBXLoader } from 'three/examples/jsm/loaders/FBXLoader.js';
 
 // Scene setup
 const scene = new THREE.Scene();
@@ -115,120 +116,51 @@ const layerInfo = [
     { name: "Green Meadow", desc: "A soft landing on Earth", start: 0.90, end: 1.0 }
 ];
 
-// Create realistic PIG model
+// Create cute pig model from FBX
 function createPig() {
     const pigGroup = new THREE.Group();
 
-    const pinkMaterial = new THREE.MeshStandardMaterial({
-        color: 0xffb6d9,
-        roughness: 0.5,
-        metalness: 0.1
-    });
+    const fbxLoader = new FBXLoader();
+    fbxLoader.load(
+        'cute-pig/source/Cute Pig.fbx',
+        (object) => {
+            console.log('Cute pig model loaded successfully');
 
-    // Main body - barrel shape
-    const bodyGeometry = new THREE.SphereGeometry(2, 32, 32);
-    bodyGeometry.scale(1.5, 1, 1.2);
-    const body = new THREE.Mesh(bodyGeometry, pinkMaterial);
-    body.castShadow = true;
-    pigGroup.add(body);
+            // Load the texture
+            const textureLoader = new THREE.TextureLoader();
+            const pigTexture = textureLoader.load('cute-pig/textures/Pig_Color_Base_Color.png');
 
-    // Head - egg shape
-    const headGeometry = new THREE.SphereGeometry(1.2, 32, 32);
-    headGeometry.scale(1.1, 0.9, 0.9);
-    const head = new THREE.Mesh(headGeometry, pinkMaterial);
-    head.position.set(2.8, 0.3, 0);
-    head.castShadow = true;
-    pigGroup.add(head);
+            object.traverse((child) => {
+                if (child.isMesh) {
+                    child.castShadow = true;
+                    child.receiveShadow = true;
 
-    // Snout - circular disk
-    const snoutGeometry = new THREE.CylinderGeometry(0.7, 0.7, 0.5, 32);
-    const snoutMaterial = new THREE.MeshStandardMaterial({
-        color: 0xffaad4,
-        roughness: 0.6
-    });
-    const snout = new THREE.Mesh(snoutGeometry, snoutMaterial);
-    snout.rotation.z = Math.PI / 2;
-    snout.position.set(3.8, 0.3, 0);
-    snout.castShadow = true;
-    pigGroup.add(snout);
+                    // Apply the texture
+                    child.material = new THREE.MeshStandardMaterial({
+                        map: pigTexture,
+                        roughness: 0.5,
+                        metalness: 0.1
+                    });
+                }
+            });
 
-    // Nostrils - big and prominent
-    const nostrilGeo = new THREE.SphereGeometry(0.18, 16, 16);
-    const nostrilMat = new THREE.MeshStandardMaterial({ color: 0x3d2817 });
-    const nostril1 = new THREE.Mesh(nostrilGeo, nostrilMat);
-    nostril1.position.set(4.0, 0.4, 0.3);
-    const nostril2 = new THREE.Mesh(nostrilGeo, nostrilMat);
-    nostril2.position.set(4.0, 0.4, -0.3);
-    pigGroup.add(nostril1, nostril2);
+            // Scale and rotate the model to match the old pig orientation
+            object.scale.set(0.02, 0.02, 0.02); // FBX models are usually large
+            object.rotation.y = Math.PI; // Face forward
 
-    // Eyes - on sides of head
-    const eyeWhiteGeo = new THREE.SphereGeometry(0.35, 16, 16);
-    const eyeWhiteMat = new THREE.MeshStandardMaterial({ color: 0xffffff });
-    const eyeWhite1 = new THREE.Mesh(eyeWhiteGeo, eyeWhiteMat);
-    eyeWhite1.position.set(3.2, 0.8, 0.9);
-    const eyeWhite2 = new THREE.Mesh(eyeWhiteGeo, eyeWhiteMat);
-    eyeWhite2.position.set(3.2, 0.8, -0.9);
-    pigGroup.add(eyeWhite1, eyeWhite2);
-
-    const eyePupilGeo = new THREE.SphereGeometry(0.2, 16, 16);
-    const eyePupilMat = new THREE.MeshStandardMaterial({ color: 0x000000 });
-    const eyePupil1 = new THREE.Mesh(eyePupilGeo, eyePupilMat);
-    eyePupil1.position.set(3.4, 0.8, 0.95);
-    const eyePupil2 = new THREE.Mesh(eyePupilGeo, eyePupilMat);
-    eyePupil2.position.set(3.4, 0.8, -0.95);
-    pigGroup.add(eyePupil1, eyePupil2);
-
-    // Ears - triangular and floppy
-    const earGeo = new THREE.ConeGeometry(0.5, 0.8, 16);
-    const ear1 = new THREE.Mesh(earGeo, pinkMaterial);
-    ear1.position.set(2.5, 1.4, 0.8);
-    ear1.rotation.z = -0.6;
-    ear1.rotation.x = 0.4;
-    ear1.castShadow = true;
-    const ear2 = new THREE.Mesh(earGeo, pinkMaterial);
-    ear2.position.set(2.5, 1.4, -0.8);
-    ear2.rotation.z = -0.6;
-    ear2.rotation.x = -0.4;
-    ear2.castShadow = true;
-    pigGroup.add(ear1, ear2);
-
-    // Legs - short and thick
-    const legGeo = new THREE.CylinderGeometry(0.4, 0.45, 1.2, 16);
-    const legPositions = [
-        [1.5, -1.2, 0.9],
-        [1.5, -1.2, -0.9],
-        [-1.5, -1.2, 0.9],
-        [-1.5, -1.2, -0.9]
-    ];
-
-    legPositions.forEach(pos => {
-        const leg = new THREE.Mesh(legGeo, pinkMaterial);
-        leg.position.set(...pos);
-        leg.castShadow = true;
-        pigGroup.add(leg);
-
-        // Hooves
-        const hoofGeo = new THREE.CylinderGeometry(0.45, 0.4, 0.3, 16);
-        const hoofMat = new THREE.MeshStandardMaterial({ color: 0xffa0c9 });
-        const hoof = new THREE.Mesh(hoofGeo, hoofMat);
-        hoof.position.set(pos[0], pos[1] - 0.7, pos[2]);
-        pigGroup.add(hoof);
-    });
-
-    // Curly tail
-    const tailCurve = new THREE.CatmullRomCurve3([
-        new THREE.Vector3(-2.5, 0.5, 0),
-        new THREE.Vector3(-3, 0.9, 0.4),
-        new THREE.Vector3(-3.2, 1.2, 0.2),
-        new THREE.Vector3(-3.1, 1.4, -0.1),
-        new THREE.Vector3(-2.9, 1.5, 0.1)
-    ]);
-    const tailGeometry = new THREE.TubeGeometry(tailCurve, 40, 0.18, 12, false);
-    const tail = new THREE.Mesh(tailGeometry, pinkMaterial);
-    tail.castShadow = true;
-    pigGroup.add(tail);
-
-    pigGroup.scale.set(0.8, 0.8, 0.8); // Scale down a bit
+            pigGroup.add(object);
+            console.log('Cute pig added to scene');
+        },
+        undefined,
+        (error) => {
+            console.error('Error loading cute pig FBX:', error);
+            // Fallback: create a simple pink sphere if model fails to load
+            const fallbackGeo = new THREE.SphereGeometry(2, 32, 32);
+            const fallbackMat = new THREE.MeshStandardMaterial({ color: 0xffb6d9 });
+            const fallback = new THREE.Mesh(fallbackGeo, fallbackMat);
+            pigGroup.add(fallback);
+        }
+    );
 
     return pigGroup;
 }
@@ -237,28 +169,30 @@ function createPig() {
 function createBalloons() {
     balloonGroup = new THREE.Group();
 
+    // Position balloonGroup high above the pig's head
+    balloonGroup.position.set(0, 3, 0.5); // At pig's head level, slightly forward
+
     const colors = [0xff1493, 0x00bfff, 0xffd700, 0xff4500, 0x00ff7f, 0xff69b4, 0x9370db, 0xff6347];
+    const bundlePoint = new THREE.Vector3(0, 3, 0); // Bundle point in local space
 
     for (let i = 0; i < 8; i++) {
-        // Balloon (more realistic shape)
-        const balloonGeometry = new THREE.SphereGeometry(0.5, 32, 32);
+        // Balloon (simplified for performance)
+        const balloonGeometry = new THREE.SphereGeometry(0.5, 16, 16); // Lower poly
         balloonGeometry.scale(0.9, 1.2, 0.9);
-        const balloonMaterial = new THREE.MeshPhysicalMaterial({
+        const balloonMaterial = new THREE.MeshStandardMaterial({
             color: colors[i],
-            roughness: 0.1,
-            metalness: 0.8,
+            roughness: 0.3,
+            metalness: 0.5,
             emissive: colors[i],
-            emissiveIntensity: 0.4,
-            clearcoat: 1.0,
-            clearcoatRoughness: 0.1
+            emissiveIntensity: 0.2
         });
         const balloon = new THREE.Mesh(balloonGeometry, balloonMaterial);
 
         const angle = (i / 8) * Math.PI * 2;
-        const radius = 2 + Math.random() * 0.5;
+        const radius = 1.5 + Math.random() * 0.5;
         balloon.position.set(
             Math.cos(angle) * radius,
-            4 + Math.random() * 1,
+            12 + Math.random() * 2, // High above the bundle point
             Math.sin(angle) * radius
         );
 
@@ -269,15 +203,14 @@ function createBalloons() {
         knot.position.copy(balloon.position);
         knot.position.y -= 0.6;
 
-        // String (wiggly curved)
+        // Individual string from balloon to bundle point
         const stringCurve = new THREE.CatmullRomCurve3([
             new THREE.Vector3(balloon.position.x, balloon.position.y - 0.6, balloon.position.z),
-            new THREE.Vector3(balloon.position.x * 0.8 + Math.sin(i) * 0.3, balloon.position.y - 1.5, balloon.position.z * 0.8 + Math.cos(i) * 0.3),
-            new THREE.Vector3(balloon.position.x * 0.5 + Math.sin(i * 2) * 0.5, balloon.position.y - 2.5, balloon.position.z * 0.5 + Math.cos(i * 2) * 0.5),
-            new THREE.Vector3(Math.sin(i * 3) * 0.3, balloon.position.y - 3.5, Math.cos(i * 3) * 0.3),
-            new THREE.Vector3(0, 1, 0)
+            new THREE.Vector3(balloon.position.x * 0.7, balloon.position.y - 3, balloon.position.z * 0.7),
+            new THREE.Vector3(balloon.position.x * 0.4, balloon.position.y - 6, balloon.position.z * 0.4),
+            bundlePoint
         ]);
-        const stringGeometry = new THREE.TubeGeometry(stringCurve, 30, 0.03, 8, false);
+        const stringGeometry = new THREE.TubeGeometry(stringCurve, 20, 0.02, 8, false);
         const stringMaterial = new THREE.MeshBasicMaterial({ color: 0xffffff });
         const string = new THREE.Mesh(stringGeometry, stringMaterial);
         string.userData.originalCurve = stringCurve;
@@ -285,6 +218,17 @@ function createBalloons() {
 
         balloonGroup.add(balloon, knot, string);
     }
+
+    // Main string from bundle point down to origin (pig's mouth)
+    const mainStringCurve = new THREE.CatmullRomCurve3([
+        bundlePoint,
+        new THREE.Vector3(0, 1.5, -0.2),
+        new THREE.Vector3(0, 0, -0.5) // Attach at origin (mouth position)
+    ]);
+    const mainStringGeometry = new THREE.TubeGeometry(mainStringCurve, 15, 0.04, 8, false);
+    const mainStringMaterial = new THREE.MeshBasicMaterial({ color: 0xffffff });
+    const mainString = new THREE.Mesh(mainStringGeometry, mainStringMaterial);
+    balloonGroup.add(mainString);
 
     return balloonGroup;
 }
@@ -295,6 +239,7 @@ function createSun() {
     const sunMaterial = new THREE.MeshBasicMaterial({
         map: sunTexturePreload,
         color: 0xffffaa, // Bright yellow-white
+        fog: false // Disable fog on sun
     });
     const sun = new THREE.Mesh(sunGeometry, sunMaterial);
     // Position sun closer to camera and to the right
@@ -317,7 +262,8 @@ function createMoon() {
         bumpMap: moonTexturesPreload.bump,
         bumpScale: 2,
         roughness: 1.0,
-        metalness: 0
+        metalness: 0,
+        fog: false // Disable fog on moon so it stays visible
     });
     const moon = new THREE.Mesh(moonGeometry, moonMaterial);
     moon.position.set(-350, 150, -500);
@@ -1179,10 +1125,12 @@ function createGround() {
     // MUCH lower poly count to eliminate lag - 32 segments instead of 64
     const earthGeometry = new THREE.SphereGeometry(500, 32, 32);
 
-    // Use preloaded earth textures - simplified material
-    const earthMaterial = new THREE.MeshBasicMaterial({
+    // Use preloaded earth textures - use MeshStandardMaterial to respond to lighting and fog
+    const earthMaterial = new THREE.MeshStandardMaterial({
         map: earthTexturesPreload.albedo,
-        // Removed bump map to reduce rendering cost
+        roughness: 0.8,
+        metalness: 0.1,
+        fog: false // Disable fog on Earth so it stays blue
     });
 
     const earth = new THREE.Mesh(earthGeometry, earthMaterial);
@@ -1197,11 +1145,14 @@ function createGround() {
 
     // Add cloud layer - also simplified
     const cloudGeometry = new THREE.SphereGeometry(510, 32, 32);
-    const cloudMaterial = new THREE.MeshBasicMaterial({
+    const cloudMaterial = new THREE.MeshStandardMaterial({
         map: earthTexturesPreload.clouds,
         transparent: true,
         opacity: 0.4,
-        depthWrite: false
+        depthWrite: false,
+        fog: false, // Disable fog on clouds
+        roughness: 1.0,
+        metalness: 0.0
     });
     const clouds = new THREE.Mesh(cloudGeometry, cloudMaterial);
     clouds.position.y = -2300;
@@ -1251,9 +1202,7 @@ function init() {
     createRocket();
     createRocket(); // Add second rocket
     createRocket(); // Add third rocket
-    createAirplane();
-    createAirplane(); // Add second airplane
-    createAirplane(); // Add third airplane
+    createAirplane(); // Just one airplane
     createBirds();
     createClouds();
     createGround();
@@ -1335,18 +1284,8 @@ function animate() {
         const earthSurfaceY = -1800;
         const targetY = -scrollProgress * 2300;
 
-        // Gentle deceleration as approaching surface
-        let actualY;
-        if (targetY < earthSurfaceY + 50) {
-            // Slow down in last 50 units
-            const distanceFromSurface = Math.max(0, earthSurfaceY - targetY);
-            const slowdownFactor = Math.min(distanceFromSurface / 50, 1);
-            actualY = targetY + slowdownFactor * 20; // Gentle cushion
-        } else {
-            actualY = targetY;
-        }
-
-        pig.position.y = Math.max(actualY, earthSurfaceY); // Touch surface gently
+        // No deceleration - constant speed all the way down
+        pig.position.y = Math.max(targetY, earthSurfaceY); // Direct position, no smoothing
 
         // Check if just landed (when touching surface)
         if (pig.position.y <= earthSurfaceY + 2 && !pigLanded) {
@@ -1439,20 +1378,36 @@ function animate() {
     let lookAtTarget;
 
     if (pigLanded) {
-        // Fixed camera position when landed - no more spazzing!
-        cameraOffset = new THREE.Vector3(0, -1750, 50); // Overhead view
-        lookAtTarget = new THREE.Vector3(pig.position.x, pig.position.y, pig.position.z);
+        // Fixed camera position when landed - lock camera, don't follow pig
+        cameraOffset = new THREE.Vector3(0, -1550, 100); // Pulled back and elevated overhead view
+        lookAtTarget = new THREE.Vector3(0, -1700, 0); // Look at landing spot, tilted up to avoid horizon
     } else {
         // SPIRAL DESCENT - multiple rotations as you fall
         const spiralRotations = 3; // 3 full rotations during descent
         const spiralAngle = scrollProgress * Math.PI * 2 * spiralRotations;
-        const spiralRadius = 30 + (1 - scrollProgress) * 20; // Start far, get closer
 
-        // Camera looks MORE DOWNWARD as you descend (falling perspective)
-        const heightOffset = 15 - scrollProgress * 10; // Start above, get level/below
+        // Pan out much more as you get closer to ground
+        let spiralRadius;
+        let heightOffset;
+        if (scrollProgress < 0.85) {
+            spiralRadius = 30 + (1 - scrollProgress) * 20; // Normal distance
+            heightOffset = 15 - scrollProgress * 10; // Start above, get level/below
+        } else {
+            // Pan out significantly in last 15% AND tilt up
+            const endProgress = (scrollProgress - 0.85) / 0.15;
+            spiralRadius = 40 + endProgress * 60; // Pan out to 100 units
+            heightOffset = 5 + endProgress * 80; // Tilt camera WAY up (raise height significantly)
+        }
 
-        // Camera angle tilts to look down more as you descend
-        const lookAheadY = pig.position.y - scrollProgress * 50; // Look further down as you fall
+        // Camera angle tilts to look down more as you descend (but less at the end)
+        let lookAheadY;
+        if (scrollProgress < 0.85) {
+            lookAheadY = pig.position.y - scrollProgress * 50; // Look further down as you fall
+        } else {
+            // At the end, look more level/up to avoid horizon fog
+            const endProgress = (scrollProgress - 0.85) / 0.15;
+            lookAheadY = pig.position.y - 42.5 + endProgress * 60; // Tilt view way up
+        }
 
         cameraOffset = new THREE.Vector3(
             Math.sin(spiralAngle) * spiralRadius,
@@ -1462,7 +1417,8 @@ function animate() {
         lookAtTarget = new THREE.Vector3(pig.position.x, lookAheadY, pig.position.z);
     }
 
-    camera.position.lerp(cameraOffset, 0.15); // Smooth movement
+    // Use constant lerp speed - no slowdown
+    camera.position.lerp(cameraOffset, 0.15);
     camera.lookAt(lookAtTarget);
 
     // Animate layers
@@ -1665,59 +1621,52 @@ function animate() {
     renderer.render(scene, camera);
 }
 
-// Handle scroll - SLOWS DOWN at specific points!
+// Click to auto-descend smoothly
+let isDescending = false;
+let descentSpeed = 0.0008; // Smooth constant speed
+
+window.addEventListener('click', (e) => {
+    if (!journeyStarted) return;
+    if (pigLanded) return;
+
+    // Toggle auto-descent on click
+    isDescending = !isDescending;
+
+    // Hide scroll hint when clicked
+    if (isDescending) {
+        document.getElementById('scroll-hint').style.opacity = '0';
+    }
+});
+
+// Also allow scroll wheel for manual control
 let scrollVelocity = 0;
 window.addEventListener('wheel', (e) => {
     if (!journeyStarted) return;
+    if (pigLanded) return;
 
-    // Once landed, NO scrolling allowed at all - stuck at bottom!
-    if (pigLanded) {
-        return;
-    }
+    // Manual scroll pauses auto-descent
+    isDescending = false;
 
-    // Slow down at specific points for dramatic effect
-    let slowdownFactor = 1;
-
-    // Slow down at RESUMES text (0.1 - 0.2)
-    if (scrollProgress > 0.1 && scrollProgress < 0.2) {
-        slowdownFactor = 0.3; // 70% slower
-    }
-    // Slow down at PROJECTS text (0.4 - 0.6)
-    else if (scrollProgress > 0.4 && scrollProgress < 0.6) {
-        slowdownFactor = 0.35; // 65% slower
-    }
-    // Slow down near planes (0.65 - 0.75)
-    else if (scrollProgress > 0.65 && scrollProgress < 0.75) {
-        slowdownFactor = 0.5; // 50% slower
-    }
-    // Slow down approaching ground (0.85 - 0.95)
-    else if (scrollProgress > 0.85 && scrollProgress < 0.95) {
-        slowdownFactor = 0.4; // Moderate slowdown at the end
-    }
-    // General slow down as we get closer to ground
-    else {
-        slowdownFactor = 1 - (scrollProgress * 0.3); // Less gradual slowdown
-    }
-
-    scrollVelocity += e.deltaY * 0.00006 * slowdownFactor; // Faster descent
+    scrollVelocity += e.deltaY * 0.00006;
     scrollVelocity = Math.max(-0.01, Math.min(0.01, scrollVelocity));
 });
 
 function updateScroll() {
-    const oldProgress = scrollProgress;
+    // Auto-descent when active
+    if (isDescending && !pigLanded) {
+        scrollProgress += descentSpeed;
+    }
+
+    // Manual scroll
     scrollProgress += scrollVelocity;
 
-    // Lock at ground level once landed - FOREVER
+    // Lock at ground level once landed
     if (pigLanded) {
         scrollProgress = 1;
         scrollVelocity = 0;
+        isDescending = false;
     } else {
-        scrollProgress = Math.max(0, Math.min(1, scrollProgress)); // HARD LOCK at 0 and 1
-    }
-
-    // Debug when scroll is happening
-    if (Math.abs(scrollVelocity) > 0.001) {
-        console.log('UPDATE - velocity:', scrollVelocity.toFixed(5), 'progress:', scrollProgress.toFixed(3));
+        scrollProgress = Math.max(0, Math.min(1, scrollProgress));
     }
 
     scrollVelocity *= 0.95;
