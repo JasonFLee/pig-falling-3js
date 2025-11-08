@@ -1,6 +1,7 @@
 import * as THREE from 'three';
 import { Sky } from 'three/examples/jsm/objects/Sky.js';
 import { OBJLoader } from 'three/examples/jsm/loaders/OBJLoader.js';
+import { MTLLoader } from 'three/examples/jsm/loaders/MTLLoader.js';
 
 // Scene setup
 const scene = new THREE.Scene();
@@ -54,6 +55,11 @@ let landingTime = 0;
 let journeyStarted = false;
 let pigVelocityY = 0; // Pig's falling velocity
 const gravity = -0.5; // Gravity strength
+
+// Audio setup for Frank Ocean
+const audio = new Audio('Frank Ocean - Pink  White(instrumental).mp3');
+audio.loop = true;
+audio.volume = 0.5;
 
 // Preload ALL textures immediately to prevent lag spike
 const textureLoader = new THREE.TextureLoader();
@@ -479,75 +485,6 @@ function createRocketWithBanner() {
 function createRocket() {
     const rocketGroup = new THREE.Group();
 
-    // Rocket body - white metallic (lower poly for performance)
-    const bodyGeo = new THREE.CylinderGeometry(1.5, 1.5, 8, 16);
-    const bodyMat = new THREE.MeshStandardMaterial({
-        color: 0xeeeeee,
-        metalness: 0.9,
-        roughness: 0.2,
-        emissive: 0x555555,
-        emissiveIntensity: 0.1
-    });
-    const body = new THREE.Mesh(bodyGeo, bodyMat);
-    body.position.y = 4;
-    rocketGroup.add(body);
-
-    // Rocket nose cone - red glossy (lower poly)
-    const noseGeo = new THREE.ConeGeometry(1.5, 3, 16);
-    const noseMat = new THREE.MeshStandardMaterial({
-        color: 0xcc1111,
-        metalness: 0.8,
-        roughness: 0.2,
-        emissive: 0x330000,
-        emissiveIntensity: 0.2
-    });
-    const nose = new THREE.Mesh(noseGeo, noseMat);
-    nose.position.y = 9.5;
-    rocketGroup.add(nose);
-
-    // Fins - blue metallic
-    const finGeo = new THREE.ConeGeometry(2, 3, 3);
-    const finMat = new THREE.MeshStandardMaterial({
-        color: 0x1155cc,
-        metalness: 0.8,
-        roughness: 0.3
-    });
-
-    for (let i = 0; i < 3; i++) {
-        const fin = new THREE.Mesh(finGeo, finMat);
-        const angle = (i / 3) * Math.PI * 2;
-        fin.position.set(Math.cos(angle) * 1.5, 1, Math.sin(angle) * 1.5);
-        fin.rotation.z = Math.PI;
-        fin.rotation.y = angle;
-        rocketGroup.add(fin);
-    }
-
-    // Rocket flame/exhaust
-    const flameGeo = new THREE.ConeGeometry(1, 3, 8);
-    const flameMat = new THREE.MeshBasicMaterial({
-        color: 0xff6600,
-        transparent: true,
-        opacity: 0.8
-    });
-    const flame = new THREE.Mesh(flameGeo, flameMat);
-    flame.position.y = -1;
-    rocketGroup.add(flame);
-
-    // Window - glossy glass-like
-    const windowGeo = new THREE.CircleGeometry(0.6, 32);
-    const windowMat = new THREE.MeshStandardMaterial({
-        color: 0x222222,
-        metalness: 1.0,
-        roughness: 0.05,
-        emissive: 0x0088ff,
-        emissiveIntensity: 0.6,
-        transparent: true,
-        opacity: 0.8
-    });
-    const window1 = new THREE.Mesh(windowGeo, windowMat);
-    window1.position.set(0, 5, 1.51);
-    rocketGroup.add(window1);
-
     // Position rocket - FAR in background of space
     const positions = [
         [-200, 150, -400],
@@ -559,14 +496,58 @@ function createRocket() {
     const rocketIndex = scene.children.filter(c => c.userData.isRocket).length;
     const pos = positions[rocketIndex % positions.length];
 
-    rocketGroup.position.set(...pos);
-    rocketGroup.rotation.z = Math.PI / 4 + Math.random() * 0.5;
-    rocketGroup.rotation.y = -Math.PI / 3 + Math.random() * Math.PI / 2;
-    rocketGroup.scale.set(5 + Math.random() * 3, 5 + Math.random() * 3, 5 + Math.random() * 3); // Bigger to see from far
-    rocketGroup.userData.isRocket = true;
+    // Load Saturn V rocket model
+    const mtlLoader = new MTLLoader();
+    mtlLoader.load(
+        'Space_Rocket_SaturnV/Saturn V/3d files/Saturn V.mtl',
+        (materials) => {
+            materials.preload();
+            console.log('Saturn V materials loaded successfully');
 
-    scene.add(rocketGroup);
-    atmosphereLayers.push({ type: 'rocket', group: rocketGroup });
+            const objLoader = new OBJLoader();
+            objLoader.setMaterials(materials);
+            objLoader.load(
+                'Space_Rocket_SaturnV/Saturn V/3d files/Saturn V.obj',
+                (object) => {
+                    console.log('Saturn V model loaded successfully', object);
+                    object.traverse((child) => {
+                        if (child.isMesh) {
+                            child.castShadow = true;
+                            child.receiveShadow = true;
+                        }
+                    });
+
+                    rocketGroup.add(object);
+                    rocketGroup.position.set(...pos);
+
+                    // Make rocket point towards the moon at (-350, 150, -500)
+                    const moonPosition = new THREE.Vector3(-350, 150, -500);
+                    const rocketPosition = new THREE.Vector3(...pos);
+                    const direction = new THREE.Vector3().subVectors(moonPosition, rocketPosition).normalize();
+
+                    // Create rotation to point towards moon
+                    const up = new THREE.Vector3(0, 1, 0);
+                    const quaternion = new THREE.Quaternion().setFromUnitVectors(up, direction);
+                    rocketGroup.quaternion.copy(quaternion);
+
+                    rocketGroup.scale.set(0.8 + Math.random() * 0.4, 0.8 + Math.random() * 0.4, 0.8 + Math.random() * 0.4);
+                    rocketGroup.userData.isRocket = true;
+
+                    scene.add(rocketGroup);
+                    atmosphereLayers.push({ type: 'rocket', group: rocketGroup });
+                    console.log('Saturn V added to scene at', pos);
+                },
+                undefined,
+                (error) => {
+                    console.error('Error loading Saturn V OBJ:', error);
+                }
+            );
+        },
+        undefined,
+        (error) => {
+            console.error('Error loading Saturn V MTL:', error);
+        }
+    );
 }
 
 // Meteors removed per user request
@@ -575,160 +556,115 @@ function createRocket() {
 function createPlaneWithBanner(message, position, rotation) {
     const planeGroup = new THREE.Group();
 
-    // Fuselage (body)
-    const bodyGeo = new THREE.CylinderGeometry(1, 1, 8, 16);
-    const bodyMat = new THREE.MeshStandardMaterial({
-        color: 0xeeeeee,
-        metalness: 0.9,
-        roughness: 0.2
+    // Load airplane model
+    const mtlLoader = new MTLLoader();
+    mtlLoader.load('Airplane_v1_L1.123c4a6fedec-1680-4a36-a228-b0d440a4f280/11803_Airplane_v1_l1.mtl', (materials) => {
+        materials.preload();
+
+        const objLoader = new OBJLoader();
+        objLoader.setMaterials(materials);
+        objLoader.load('Airplane_v1_L1.123c4a6fedec-1680-4a36-a228-b0d440a4f280/11803_Airplane_v1_l1.obj', (object) => {
+            object.traverse((child) => {
+                if (child.isMesh) {
+                    child.castShadow = true;
+                    child.receiveShadow = true;
+                }
+            });
+
+            planeGroup.add(object);
+
+            // Banner
+            const bannerGeo = new THREE.PlaneGeometry(20, 4);
+            const bannerCanvas = document.createElement('canvas');
+            bannerCanvas.width = 512;
+            bannerCanvas.height = 128;
+            const bannerCtx = bannerCanvas.getContext('2d');
+            bannerCtx.fillStyle = '#ffffff';
+            bannerCtx.fillRect(0, 0, bannerCanvas.width, bannerCanvas.height);
+            bannerCtx.strokeStyle = '#ff0000';
+            bannerCtx.lineWidth = 8;
+            bannerCtx.strokeRect(4, 4, bannerCanvas.width - 8, bannerCanvas.height - 8);
+            bannerCtx.fillStyle = '#000000';
+            bannerCtx.font = 'bold 60px Arial';
+            bannerCtx.textAlign = 'center';
+            bannerCtx.textBaseline = 'middle';
+            bannerCtx.fillText(message, bannerCanvas.width / 2, bannerCanvas.height / 2);
+
+            const bannerTexture = new THREE.CanvasTexture(bannerCanvas);
+            const bannerMat = new THREE.MeshBasicMaterial({
+                map: bannerTexture,
+                side: THREE.DoubleSide
+            });
+            const banner = new THREE.Mesh(bannerGeo, bannerMat);
+            banner.position.set(-15, 0, 0);
+            planeGroup.add(banner);
+
+            // Connecting string
+            const stringGeo = new THREE.CylinderGeometry(0.05, 0.05, 10, 8);
+            const stringMat = new THREE.MeshBasicMaterial({ color: 0x333333 });
+            const string1 = new THREE.Mesh(stringGeo, stringMat);
+            string1.rotation.z = Math.PI / 2;
+            string1.position.set(-5, 0, 1.5);
+            planeGroup.add(string1);
+
+            const string2 = new THREE.Mesh(stringGeo, stringMat);
+            string2.rotation.z = Math.PI / 2;
+            string2.position.set(-5, 0, -1.5);
+            planeGroup.add(string2);
+
+            planeGroup.position.copy(position);
+            planeGroup.rotation.set(-Math.PI / 2, 0, rotation); // Rotate to fix orientation - belly down, flying forward
+            planeGroup.scale.set(0.05, 0.05, 0.05); // Much smaller
+
+            scene.add(planeGroup);
+            atmosphereLayers.push({ type: 'bannerPlane', group: planeGroup });
+        });
     });
-    const body = new THREE.Mesh(bodyGeo, bodyMat);
-    body.rotation.z = Math.PI / 2;
-    planeGroup.add(body);
-
-    // Nose cone
-    const noseGeo = new THREE.ConeGeometry(1, 2, 16);
-    const nose = new THREE.Mesh(noseGeo, bodyMat);
-    nose.rotation.z = -Math.PI / 2;
-    nose.position.x = 5;
-    planeGroup.add(nose);
-
-    // Wings
-    const wingGeo = new THREE.BoxGeometry(12, 0.3, 3);
-    const wingMat = new THREE.MeshStandardMaterial({
-        color: 0xaaaaaa,
-        metalness: 0.8,
-        roughness: 0.3
-    });
-    const wings = new THREE.Mesh(wingGeo, wingMat);
-    wings.position.y = 0.5;
-    planeGroup.add(wings);
-
-    // Tail
-    const tailGeo = new THREE.BoxGeometry(3, 0.2, 2);
-    const tail = new THREE.Mesh(tailGeo, wingMat);
-    tail.position.set(-3.5, 0.3, 0);
-    planeGroup.add(tail);
-
-    // Vertical stabilizer
-    const finGeo = new THREE.BoxGeometry(0.3, 2, 2);
-    const fin = new THREE.Mesh(finGeo, wingMat);
-    fin.position.set(-3.5, 1.5, 0);
-    planeGroup.add(fin);
-
-    // Banner
-    const bannerGeo = new THREE.PlaneGeometry(20, 4);
-    const bannerCanvas = document.createElement('canvas');
-    bannerCanvas.width = 512;
-    bannerCanvas.height = 128;
-    const bannerCtx = bannerCanvas.getContext('2d');
-    bannerCtx.fillStyle = '#ffffff';
-    bannerCtx.fillRect(0, 0, bannerCanvas.width, bannerCanvas.height);
-    bannerCtx.strokeStyle = '#ff0000';
-    bannerCtx.lineWidth = 8;
-    bannerCtx.strokeRect(4, 4, bannerCanvas.width - 8, bannerCanvas.height - 8);
-    bannerCtx.fillStyle = '#000000';
-    bannerCtx.font = 'bold 60px Arial';
-    bannerCtx.textAlign = 'center';
-    bannerCtx.textBaseline = 'middle';
-    bannerCtx.fillText(message, bannerCanvas.width / 2, bannerCanvas.height / 2);
-
-    const bannerTexture = new THREE.CanvasTexture(bannerCanvas);
-    const bannerMat = new THREE.MeshBasicMaterial({
-        map: bannerTexture,
-        side: THREE.DoubleSide
-    });
-    const banner = new THREE.Mesh(bannerGeo, bannerMat);
-    banner.position.set(-15, 0, 0);
-    planeGroup.add(banner);
-
-    // Connecting string
-    const stringGeo = new THREE.CylinderGeometry(0.05, 0.05, 10, 8);
-    const stringMat = new THREE.MeshBasicMaterial({ color: 0x333333 });
-    const string1 = new THREE.Mesh(stringGeo, stringMat);
-    string1.rotation.z = Math.PI / 2;
-    string1.position.set(-5, 0, 1.5);
-    planeGroup.add(string1);
-
-    const string2 = new THREE.Mesh(stringGeo, stringMat);
-    string2.rotation.z = Math.PI / 2;
-    string2.position.set(-5, 0, -1.5);
-    planeGroup.add(string2);
-
-    planeGroup.position.copy(position);
-    planeGroup.rotation.y = rotation;
-    planeGroup.scale.set(3, 3, 3);
-
-    scene.add(planeGroup);
-    atmosphereLayers.push({ type: 'bannerPlane', group: planeGroup });
 }
 
 // Create airplane flying in the distance
 function createAirplane() {
     const planeGroup = new THREE.Group();
 
-    // Fuselage (body) - white metallic (lower poly)
-    const bodyGeo = new THREE.CylinderGeometry(1, 1, 8, 16);
-    const bodyMat = new THREE.MeshStandardMaterial({
-        color: 0xeeeeee,
-        metalness: 0.9,
-        roughness: 0.2
+    // Multiple positions for airplanes
+    const positions = [
+        [-150, -800, -200],
+        [180, -750, -250],
+        [-200, -850, -180],
+        [100, -820, -230],
+        [-250, -780, -210]
+    ];
+
+    const airplaneIndex = scene.children.filter(c => c.userData.isAirplane).length;
+    const pos = positions[airplaneIndex % positions.length];
+
+    // Load airplane model
+    const mtlLoader = new MTLLoader();
+    mtlLoader.load('Airplane_v1_L1.123c4a6fedec-1680-4a36-a228-b0d440a4f280/11803_Airplane_v1_l1.mtl', (materials) => {
+        materials.preload();
+
+        const objLoader = new OBJLoader();
+        objLoader.setMaterials(materials);
+        objLoader.load('Airplane_v1_L1.123c4a6fedec-1680-4a36-a228-b0d440a4f280/11803_Airplane_v1_l1.obj', (object) => {
+            object.traverse((child) => {
+                if (child.isMesh) {
+                    child.castShadow = true;
+                    child.receiveShadow = true;
+                }
+            });
+
+            planeGroup.add(object);
+
+            // Position plane in stratosphere
+            planeGroup.position.set(...pos);
+            planeGroup.rotation.set(-Math.PI / 2, 0, Math.PI / 4 + Math.random() * 0.3); // Fix orientation - belly down, flying forward
+            planeGroup.scale.set(0.05, 0.05, 0.05); // Much smaller
+            planeGroup.userData.isAirplane = true;
+
+            scene.add(planeGroup);
+            atmosphereLayers.push({ type: 'airplane', group: planeGroup });
+        });
     });
-    const body = new THREE.Mesh(bodyGeo, bodyMat);
-    body.rotation.z = Math.PI / 2;
-    planeGroup.add(body);
-
-    // Nose cone (lower poly)
-    const noseGeo = new THREE.ConeGeometry(1, 2, 16);
-    const nose = new THREE.Mesh(noseGeo, bodyMat);
-    nose.rotation.z = -Math.PI / 2;
-    nose.position.x = 5;
-    planeGroup.add(nose);
-
-    // Wings - metallic gray
-    const wingGeo = new THREE.BoxGeometry(12, 0.3, 3);
-    const wingMat = new THREE.MeshStandardMaterial({
-        color: 0xaaaaaa,
-        metalness: 0.8,
-        roughness: 0.3
-    });
-    const wings = new THREE.Mesh(wingGeo, wingMat);
-    wings.position.y = 0.5;
-    planeGroup.add(wings);
-
-    // Tail wing
-    const tailGeo = new THREE.BoxGeometry(3, 0.2, 2);
-    const tail = new THREE.Mesh(tailGeo, wingMat);
-    tail.position.set(-3.5, 0.3, 0);
-    planeGroup.add(tail);
-
-    // Vertical stabilizer
-    const finGeo = new THREE.BoxGeometry(0.3, 2, 2);
-    const fin = new THREE.Mesh(finGeo, wingMat);
-    fin.position.set(-3.5, 1.5, 0);
-    planeGroup.add(fin);
-
-    // Add cockpit windows
-    const windowGeo = new THREE.SphereGeometry(0.4, 16, 16);
-    const windowMat = new THREE.MeshStandardMaterial({
-        color: 0x111111,
-        metalness: 1.0,
-        roughness: 0.05,
-        emissive: 0x003366,
-        emissiveIntensity: 0.4
-    });
-    const cockpitWindow = new THREE.Mesh(windowGeo, windowMat);
-    cockpitWindow.position.set(3, 0.8, 0);
-    cockpitWindow.scale.set(1, 0.7, 1);
-    planeGroup.add(cockpitWindow);
-
-    // Position plane in stratosphere
-    planeGroup.position.set(-150, -800, -200);
-    planeGroup.rotation.y = Math.PI / 4;
-    planeGroup.scale.set(3, 3, 3);
-
-    scene.add(planeGroup);
-    atmosphereLayers.push({ type: 'airplane', group: planeGroup });
 }
 
 // Create birds flying in troposphere
@@ -1313,7 +1249,11 @@ function init() {
     createSun();
     createMoon();
     createRocket();
+    createRocket(); // Add second rocket
+    createRocket(); // Add third rocket
     createAirplane();
+    createAirplane(); // Add second airplane
+    createAirplane(); // Add third airplane
     createBirds();
     createClouds();
     createGround();
@@ -1334,6 +1274,11 @@ function init() {
     window.addEventListener('journeyStart', () => {
         journeyStarted = true;
         pig.visible = true;
+
+        // Play Frank Ocean music
+        audio.play().catch(err => {
+            console.log('Audio autoplay prevented, will play on user interaction:', err);
+        });
     });
 }
 
@@ -1747,14 +1692,14 @@ window.addEventListener('wheel', (e) => {
     }
     // Slow down approaching ground (0.85 - 0.95)
     else if (scrollProgress > 0.85 && scrollProgress < 0.95) {
-        slowdownFactor = 0.25; // 75% slower
+        slowdownFactor = 0.4; // Moderate slowdown at the end
     }
     // General slow down as we get closer to ground
     else {
-        slowdownFactor = 1 - (scrollProgress * 0.4); // Gradual slowdown
+        slowdownFactor = 1 - (scrollProgress * 0.3); // Less gradual slowdown
     }
 
-    scrollVelocity += e.deltaY * 0.00005 * slowdownFactor; // WAY slower descent
+    scrollVelocity += e.deltaY * 0.00006 * slowdownFactor; // Faster descent
     scrollVelocity = Math.max(-0.01, Math.min(0.01, scrollVelocity));
 });
 
