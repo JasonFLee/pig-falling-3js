@@ -849,10 +849,10 @@ function createHotAirBalloon() {
                     // Position hot air balloon - FINAL: back to lower atmosphere, correct orientation
                     object.position.set(200, -800, -150);
                     object.scale.set(0.3, 0.3, 0.3); // Correct small size
-                    // CORRECT ORIENTATION: Z rotation makes it vertical, Y rotation points it right direction
+                    // Basket pointing DOWN (6 o'clock): need PI rotation on Z to flip it 180 degrees
                     object.rotation.x = 0;
                     object.rotation.y = 0;
-                    object.rotation.z = -Math.PI / 2;
+                    object.rotation.z = Math.PI;
 
                     console.log('🎈 Hot air balloon position:', object.position);
                     console.log('🎈 Hot air balloon scale:', object.scale);
@@ -1619,7 +1619,7 @@ function createGround() {
     });
 
     const earth = new THREE.Mesh(earthGeometry, earthMaterial);
-    earth.position.y = -2300;
+    earth.position.y = -2200; // Raised from -2300 to hide bottom seam
 
     // Rotate Earth so California is on top (37°N, 119°W)
     earth.rotation.y = -Math.PI * (119 / 180) + Math.PI;
@@ -1640,7 +1640,7 @@ function createGround() {
         metalness: 0.0
     });
     const clouds = new THREE.Mesh(cloudGeometry, cloudMaterial);
-    clouds.position.y = -2300;
+    clouds.position.y = -2200; // Raised to match earth
     clouds.rotation.y = earth.rotation.y;
     clouds.rotation.x = earth.rotation.x;
     scene.add(clouds);
