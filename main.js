@@ -810,9 +810,9 @@ function createHermes() {
                 loadedCount++;
 
                 if (loadedCount === modules.length) {
-                    // Position Hermes way up in space
-                    hermesGroup.position.set(-400, 800, -600);
-                    hermesGroup.scale.set(0.5, 0.5, 0.5);
+                    // Position Hermes way up in space - much smaller, far from sun
+                    hermesGroup.position.set(-500, 900, -800);
+                    hermesGroup.scale.set(0.1, 0.1, 0.1); // Much smaller
                     hermesGroup.rotation.y = Math.PI / 6;
 
                     scene.add(hermesGroup);
@@ -846,9 +846,10 @@ function createHotAirBalloon() {
                         }
                     });
 
-                    // Position hot air balloon towards the top
-                    object.position.set(200, 300, -150);
-                    object.scale.set(3, 3, 3);
+                    // Position hot air balloon lower in atmosphere - much smaller and upright
+                    object.position.set(200, -800, -150);
+                    object.scale.set(0.3, 0.3, 0.3); // Much smaller
+                    object.rotation.x = -Math.PI / 2; // Fix orientation - make it upright
                     object.rotation.y = Math.PI / 3;
 
                     scene.add(object);
@@ -883,36 +884,62 @@ function createUpHouse() {
     roof.rotation.y = Math.PI / 4;
     house.add(roof);
 
-    // Add colorful balloons above house
-    const balloonColors = [0xff1493, 0x00bfff, 0xffd700, 0xff4500, 0x00ff7f,
-                          0xff69b4, 0x9370db, 0xff6347, 0x1e90ff, 0xffa500];
+    // Add WAY more colorful balloons clumped above house like in the movie "Up"
+    const balloonColors = [
+        0xff1493, 0x00bfff, 0xffd700, 0xff4500, 0x00ff7f,
+        0xff69b4, 0x9370db, 0xff6347, 0x1e90ff, 0xffa500,
+        0xff0000, 0x00ff00, 0x0000ff, 0xffff00, 0xff00ff,
+        0x00ffff, 0xff8c00, 0x9400d3, 0x32cd32, 0xff1493
+    ];
 
-    for (let i = 0; i < balloonColors.length; i++) {
-        const balloonGeo = new THREE.SphereGeometry(0.6, 16, 16);
-        balloonGeo.scale(0.9, 1.2, 0.9);
+    // Create 100 balloons in a tight cluster/dome formation like the movie
+    for (let i = 0; i < 100; i++) {
+        const balloonGeo = new THREE.SphereGeometry(0.5, 12, 12);
+        balloonGeo.scale(0.9, 1.2, 0.9); // Balloon shape
+
+        const color = balloonColors[Math.floor(Math.random() * balloonColors.length)];
         const balloonMat = new THREE.MeshStandardMaterial({
-            color: balloonColors[i],
-            emissive: balloonColors[i],
-            emissiveIntensity: 0.5
+            color: color,
+            emissive: color,
+            emissiveIntensity: 0.4,
+            roughness: 0.3,
+            metalness: 0.1
         });
         const balloon = new THREE.Mesh(balloonGeo, balloonMat);
 
-        const angle = (i / balloonColors.length) * Math.PI * 2;
-        const radius = 3 + Math.random();
+        // Cluster balloons in a dome/sphere formation above the house
+        // Use spherical coordinates for even distribution
+        const phi = Math.acos(2 * Math.random() - 1); // Only upper hemisphere
+        const theta = Math.random() * Math.PI * 2;
+        const radius = 4 + Math.random() * 3; // Tight cluster
+
         balloon.position.set(
-            Math.cos(angle) * radius,
-            15 + Math.random() * 3,
-            Math.sin(angle) * radius
+            Math.sin(phi) * Math.cos(theta) * radius,
+            12 + Math.abs(Math.cos(phi)) * radius, // Above house, dome shape
+            Math.sin(phi) * Math.sin(theta) * radius
         );
+
         house.add(balloon);
     }
 
-    // Strings connecting balloons to house
-    for (let i = 0; i < 5; i++) {
-        const stringGeo = new THREE.CylinderGeometry(0.03, 0.03, 10, 8);
-        const stringMat = new THREE.MeshBasicMaterial({ color: 0xffffff });
+    // Add many strings connecting balloons to house
+    for (let i = 0; i < 20; i++) {
+        const stringGeo = new THREE.CylinderGeometry(0.02, 0.02, 12, 4);
+        const stringMat = new THREE.MeshBasicMaterial({
+            color: 0xffffff,
+            transparent: true,
+            opacity: 0.6
+        });
         const string = new THREE.Mesh(stringGeo, stringMat);
-        string.position.set((i - 2) * 1.5, 12, 0);
+
+        const angle = (i / 20) * Math.PI * 2;
+        const stringRadius = 2 + Math.random() * 2;
+        string.position.set(
+            Math.cos(angle) * stringRadius,
+            12,
+            Math.sin(angle) * stringRadius
+        );
+        string.rotation.z = (Math.random() - 0.5) * 0.3; // Slight tilt
         house.add(string);
     }
 
@@ -922,7 +949,7 @@ function createUpHouse() {
 
     scene.add(house);
     atmosphereLayers.push({ type: 'upHouse', group: house });
-    console.log('🏠 Up house with balloons created');
+    console.log('🏠 Up house with 100 balloons loaded (like the movie!)');
 }
 
 // Create airplane flying in the distance
