@@ -3,6 +3,7 @@ import { Sky } from 'three/examples/jsm/objects/Sky.js';
 import { OBJLoader } from 'three/examples/jsm/loaders/OBJLoader.js';
 import { MTLLoader } from 'three/examples/jsm/loaders/MTLLoader.js';
 import { FBXLoader } from 'three/examples/jsm/loaders/FBXLoader.js';
+import { GLTFLoader } from 'three/examples/jsm/loaders/GLTFLoader.js';
 import { EffectComposer, RenderPass, EffectPass, BloomEffect, DepthOfFieldEffect, VignetteEffect, NoiseEffect, SMAAEffect } from 'postprocessing';
 import { GUI } from 'lil-gui';
 
@@ -758,6 +759,172 @@ function createPlaneWithBanner(message, position, rotation) {
     });
 }
 
+// Create UFO in space
+function createUFO() {
+    const gltfLoader = new GLTFLoader();
+    gltfLoader.load(
+        'Baked_Animations_UFO_Empty GLTF/UFO_Empty.glb',
+        (gltf) => {
+            const ufo = gltf.scene;
+            ufo.traverse((child) => {
+                if (child.isMesh) {
+                    child.castShadow = true;
+                    child.receiveShadow = true;
+                }
+            });
+
+            // Position UFO in space (high up)
+            ufo.position.set(150, 500, -300);
+            ufo.scale.set(2, 2, 2);
+            ufo.rotation.y = Math.PI / 4;
+
+            // Add glow for UFO
+            const glowLight = new THREE.PointLight(0x00ff00, 3, 100);
+            glowLight.position.copy(ufo.position);
+            scene.add(glowLight);
+
+            scene.add(ufo);
+            atmosphereLayers.push({ type: 'ufo', group: ufo });
+            console.log('🛸 UFO loaded in space');
+        },
+        undefined,
+        (error) => console.error('Error loading UFO:', error)
+    );
+}
+
+// Create Hermes spacecraft in space
+function createHermes() {
+    const objLoader = new OBJLoader();
+    const hermesGroup = new THREE.Group();
+
+    // Load main modules
+    const modules = ['CmdModule.obj', 'FuelModule.obj', 'DishAnt.obj', 'IonDrive.obj',
+                     'HabWheel.obj', 'SolarPanels.obj', 'SolarModules.obj'];
+
+    let loadedCount = 0;
+    modules.forEach(moduleName => {
+        objLoader.load(
+            `Hermes/${moduleName}`,
+            (object) => {
+                hermesGroup.add(object);
+                loadedCount++;
+
+                if (loadedCount === modules.length) {
+                    // Position Hermes way up in space
+                    hermesGroup.position.set(-400, 800, -600);
+                    hermesGroup.scale.set(0.5, 0.5, 0.5);
+                    hermesGroup.rotation.y = Math.PI / 6;
+
+                    scene.add(hermesGroup);
+                    atmosphereLayers.push({ type: 'hermes', group: hermesGroup });
+                    console.log('🚀 Hermes spacecraft loaded');
+                }
+            },
+            undefined,
+            (error) => console.warn(`Hermes module ${moduleName} error:`, error)
+        );
+    });
+}
+
+// Create hot air balloon towards the top
+function createHotAirBalloon() {
+    const mtlLoader = new MTLLoader();
+    mtlLoader.load(
+        'Hot_air_balloon_v1_L2.123c69a97f0e-9977-45dd-9570-457189ce2941/11809_Hot_air_balloon_l2.mtl',
+        (materials) => {
+            materials.preload();
+
+            const objLoader = new OBJLoader();
+            objLoader.setMaterials(materials);
+            objLoader.load(
+                'Hot_air_balloon_v1_L2.123c69a97f0e-9977-45dd-9570-457189ce2941/11809_Hot_air_balloon_l2.obj',
+                (object) => {
+                    object.traverse((child) => {
+                        if (child.isMesh) {
+                            child.castShadow = true;
+                            child.receiveShadow = true;
+                        }
+                    });
+
+                    // Position hot air balloon towards the top
+                    object.position.set(200, 300, -150);
+                    object.scale.set(3, 3, 3);
+                    object.rotation.y = Math.PI / 3;
+
+                    scene.add(object);
+                    atmosphereLayers.push({ type: 'hotAirBalloon', group: object });
+                    console.log('🎈 Hot air balloon loaded');
+                },
+                undefined,
+                (error) => console.error('Error loading hot air balloon:', error)
+            );
+        },
+        undefined,
+        (error) => console.error('Error loading hot air balloon materials:', error)
+    );
+}
+
+// Create Up house with balloons
+function createUpHouse() {
+    const house = new THREE.Group();
+
+    // House base
+    const houseGeo = new THREE.BoxGeometry(8, 8, 8);
+    const houseMat = new THREE.MeshStandardMaterial({ color: 0xffcc99 });
+    const houseBase = new THREE.Mesh(houseGeo, houseMat);
+    houseBase.position.y = 4;
+    house.add(houseBase);
+
+    // Roof
+    const roofGeo = new THREE.ConeGeometry(6, 4, 4);
+    const roofMat = new THREE.MeshStandardMaterial({ color: 0x8b4513 });
+    const roof = new THREE.Mesh(roofGeo, roofMat);
+    roof.position.y = 10;
+    roof.rotation.y = Math.PI / 4;
+    house.add(roof);
+
+    // Add colorful balloons above house
+    const balloonColors = [0xff1493, 0x00bfff, 0xffd700, 0xff4500, 0x00ff7f,
+                          0xff69b4, 0x9370db, 0xff6347, 0x1e90ff, 0xffa500];
+
+    for (let i = 0; i < balloonColors.length; i++) {
+        const balloonGeo = new THREE.SphereGeometry(0.6, 16, 16);
+        balloonGeo.scale(0.9, 1.2, 0.9);
+        const balloonMat = new THREE.MeshStandardMaterial({
+            color: balloonColors[i],
+            emissive: balloonColors[i],
+            emissiveIntensity: 0.5
+        });
+        const balloon = new THREE.Mesh(balloonGeo, balloonMat);
+
+        const angle = (i / balloonColors.length) * Math.PI * 2;
+        const radius = 3 + Math.random();
+        balloon.position.set(
+            Math.cos(angle) * radius,
+            15 + Math.random() * 3,
+            Math.sin(angle) * radius
+        );
+        house.add(balloon);
+    }
+
+    // Strings connecting balloons to house
+    for (let i = 0; i < 5; i++) {
+        const stringGeo = new THREE.CylinderGeometry(0.03, 0.03, 10, 8);
+        const stringMat = new THREE.MeshBasicMaterial({ color: 0xffffff });
+        const string = new THREE.Mesh(stringGeo, stringMat);
+        string.position.set((i - 2) * 1.5, 12, 0);
+        house.add(string);
+    }
+
+    // Position Up house in the troposphere
+    house.position.set(-100, -1400, 200);
+    house.scale.set(2, 2, 2);
+
+    scene.add(house);
+    atmosphereLayers.push({ type: 'upHouse', group: house });
+    console.log('🏠 Up house with balloons created');
+}
+
 // Create airplane flying in the distance
 function createAirplane() {
     const planeGroup = new THREE.Group();
@@ -1486,6 +1653,10 @@ function init() {
     createRocket();
     createRocket(); // Add second rocket
     createRocket(); // Add third rocket
+    createUFO(); // UFO in space
+    createHermes(); // Hermes spacecraft way up in space
+    createHotAirBalloon(); // Hot air balloon towards the top
+    createUpHouse(); // Up house with balloons in troposphere
     createAirplane(); // Just one airplane
     createBirds();
     createClouds();
