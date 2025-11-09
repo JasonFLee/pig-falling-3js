@@ -67,36 +67,6 @@
             100% { opacity: 1; }
         }
 
-        #click-indicator {
-            position: fixed;
-            top: 50%;
-            left: 50%;
-            transform: translate(-50%, -50%);
-            color: white;
-            font-size: 24px;
-            z-index: 100;
-            text-align: center;
-            opacity: 0;
-            pointer-events: none;
-            text-shadow: 0 0 10px rgba(0, 0, 0, 0.8);
-        }
-
-        #click-indicator.show {
-            animation: pulse 2s infinite;
-            opacity: 1;
-        }
-
-        .click-arrow {
-            font-size: 48px;
-            display: block;
-            animation: bounce 1.5s infinite;
-        }
-
-        @keyframes bounce {
-            0%, 100% { transform: translateY(0); }
-            50% { transform: translateY(-10px); }
-        }
-
         #info-overlay {
             position: fixed;
             left: 20px;
@@ -330,10 +300,6 @@
 
     <div id="canvas-container"></div>
 
-    <div id="click-indicator">
-        <span class="click-arrow">👆</span>
-    </div>
-
     <div id="info-overlay">
         <div id="info-netflix" class="info-item fade-item">
             <strong>Technical Program Manager</strong><br>Netflix
@@ -355,9 +321,9 @@
         <a id="btn-documentary" href="https://www.youtube.com/watch?v=E4CKj5Ng6kM" target="_blank" class="link-button fade-item">Watch Documentary</a>
     </div>
 
-    <!-- Frank Ocean Music -->
+    <!-- Background Music -->
     <audio id="background-music" autoplay loop>
-        <source src="/Frank Ocean - Pink  White(instrumental).mp3" type="audio/mpeg">
+        <source src="/Arm [aPg_C-RRqx4].mp3" type="audio/mpeg">
     </audio>
 
     <script type="module" src="/main.js"></script>
@@ -383,24 +349,41 @@
                     introScreen.remove();
                     window.dispatchEvent(new CustomEvent('journeyStart'));
 
-                    // Show click indicator for 1.5 seconds then auto-hide
-                    setTimeout(() => {
-                        const clickIndicator = document.getElementById('click-indicator');
-                        clickIndicator.classList.add('show');
+                    // Start descent immediately - no click needed
+                    window.dispatchEvent(new CustomEvent('startDescent'));
 
-                        // Auto-hide after 1.5 seconds
-                        setTimeout(() => {
-                            clickIndicator.classList.remove('show');
-                        }, 1500);
-                    }, 500);
+                    // Sync career info with music (5 second intervals)
+                    showCareerInfoTimeline();
                 }, 500);
             }, 2000);
         });
 
-        // Hide click indicator immediately on click
-        document.addEventListener('click', () => {
-            document.getElementById('click-indicator').classList.remove('show');
-        }, { once: true });
+        // Career info timeline synced with music (5 second intervals starting at 2s)
+        function showCareerInfoTimeline() {
+            const schedule = [
+                { id: 'info-netflix', time: 2000 },     // 2s
+                { id: 'info-amazon', time: 7000 },      // 7s (2 + 5)
+                { id: 'info-dartmouth', time: 12000 },  // 12s (7 + 5)
+                { id: 'info-mines', time: 17000 },      // 17s (12 + 5)
+                { id: 'btn-projects', time: 22000 },    // 22s (17 + 5)
+                { id: 'btn-linkedin', time: 27000 },    // 27s (22 + 5)
+                { id: 'btn-documentary', time: 32000 }  // 32s (27 + 5)
+            ];
+
+            // Show each item for exactly 3 seconds
+            schedule.forEach(item => {
+                setTimeout(() => {
+                    const element = document.getElementById(item.id);
+                    if (element) {
+                        element.classList.add('visible');
+                        // Hide after exactly 3 seconds
+                        setTimeout(() => {
+                            element.classList.remove('visible');
+                        }, 3000);
+                    }
+                }, item.time);
+            });
+        }
 
         // Modal functions
         function closeModal() {
