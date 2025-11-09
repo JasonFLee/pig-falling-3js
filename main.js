@@ -105,6 +105,11 @@ const starsTexturePreload = textureLoader.load('/8k_stars_milky_way.jpg',
     undefined,
     (err) => console.error('Stars texture error:', err)
 );
+const aerialCloudTexturePreload = textureLoader.load('/aerial_view_of_clouds_under_light_blue_sky_4k_hd_light_blue-3840x2160.jpg',
+    () => console.log('Aerial cloud texture loaded'),
+    undefined,
+    (err) => console.error('Aerial cloud texture error:', err)
+);
 
 // Layer information - extended cloud layer
 const layerInfo = [
@@ -284,8 +289,22 @@ function createStars() {
         opacity: 1
     });
     const starSphere = new THREE.Mesh(starSphereGeometry, starSphereMaterial);
+    starSphere.userData.isStarSphere = true;
     scene.add(starSphere);
     particles.push(starSphere);
+
+    // Add aerial cloud photo sphere for atmosphere
+    const aerialSphereGeometry = new THREE.SphereGeometry(2400, 64, 64);
+    const aerialSphereMaterial = new THREE.MeshBasicMaterial({
+        map: aerialCloudTexturePreload,
+        side: THREE.BackSide,
+        transparent: true,
+        opacity: 0
+    });
+    const aerialSphere = new THREE.Mesh(aerialSphereGeometry, aerialSphereMaterial);
+    aerialSphere.userData.isAerialSphere = true;
+    scene.add(aerialSphere);
+    particles.push(aerialSphere);
 
     // Also create some additional particle stars for depth
     createFallbackStars();
@@ -1469,22 +1488,55 @@ function animate() {
         }
     });
 
-    // Rotate stars - ONLY show in space (before atmosphere)
+    // Rotate and manage particles (stars and aerial sky)
     particles.forEach(p => {
         p.rotation.y += 0.0003;
         p.rotation.x += 0.0001;
 
-        // Only visible in pure space (before 10% - before atmosphere starts)
-        if (scrollProgress < 0.08) {
-            p.visible = true;
-            p.material.opacity = 0.9;
-        } else if (scrollProgress < 0.12) {
-            // Quick fade as entering atmosphere
-            p.visible = true;
-            const fadeOut = (scrollProgress - 0.08) / 0.04; // 0 to 1
-            p.material.opacity = 0.9 * (1 - fadeOut);
-        } else {
-            p.visible = false;
+        // Star sphere - only in space
+        if (p.userData.isStarSphere) {
+            if (scrollProgress < 0.08) {
+                p.visible = true;
+                p.material.opacity = 0.9;
+            } else if (scrollProgress < 0.12) {
+                p.visible = true;
+                const fadeOut = (scrollProgress - 0.08) / 0.04;
+                p.material.opacity = 0.9 * (1 - fadeOut);
+            } else {
+                p.visible = false;
+            }
+        }
+
+        // Aerial cloud sphere - only in atmosphere
+        if (p.userData.isAerialSphere) {
+            if (scrollProgress < 0.15) {
+                p.visible = false;
+            } else if (scrollProgress < 0.25) {
+                p.visible = true;
+                const fadeIn = (scrollProgress - 0.15) / 0.10;
+                p.material.opacity = fadeIn * 0.8;
+            } else if (scrollProgress < 0.90) {
+                p.visible = true;
+                p.material.opacity = 0.8;
+            } else {
+                p.visible = true;
+                const fadeOut = (scrollProgress - 0.90) / 0.10;
+                p.material.opacity = 0.8 * (1 - fadeOut);
+            }
+        }
+
+        // Particle stars - only in space
+        if (!p.userData.isStarSphere && !p.userData.isAerialSphere) {
+            if (scrollProgress < 0.08) {
+                p.visible = true;
+                if (p.material.opacity !== undefined) p.material.opacity = 0.9;
+            } else if (scrollProgress < 0.12) {
+                p.visible = true;
+                const fadeOut = (scrollProgress - 0.08) / 0.04;
+                if (p.material.opacity !== undefined) p.material.opacity = 0.9 * (1 - fadeOut);
+            } else {
+                p.visible = false;
+            }
         }
     });
 
@@ -1569,54 +1621,9 @@ function animate() {
         }
     }
 
-    // Update scene colors based on layer - VERY SMOOTH gradual transitions
-    const bgColors = [
-        new THREE.Color(0x000000), // Space - pure black
-        new THREE.Color(0x020205), // Very early atmosphere
-        new THREE.Color(0x040408), //
-        new THREE.Color(0x06060c), //
-        new THREE.Color(0x080810), // Early thermosphere - very dark
-        new THREE.Color(0x0a0a14), // Thermosphere - dark blue-black
-        new THREE.Color(0x0d0d18), //
-        new THREE.Color(0x10101c), //
-        new THREE.Color(0x131320), //
-        new THREE.Color(0x161624), //
-        new THREE.Color(0x191928), // Late thermosphere
-        new THREE.Color(0x1c1c2c), //
-        new THREE.Color(0x1f1f30), // Mesosphere - dark blue
-        new THREE.Color(0x232338), //
-        new THREE.Color(0x272740), //
-        new THREE.Color(0x2b2b48), // Mid mesosphere
-        new THREE.Color(0x2f2f50), //
-        new THREE.Color(0x333358), //
-        new THREE.Color(0x373760), //
-        new THREE.Color(0x3b3b68), // Late mesosphere
-        new THREE.Color(0x3f3f70), //
-        new THREE.Color(0x434378), // Stratosphere - deeper blue
-        new THREE.Color(0x474780), //
-        new THREE.Color(0x4b4b88), //
-        new THREE.Color(0x4f4f90), // Mid stratosphere
-        new THREE.Color(0x535398), //
-        new THREE.Color(0x5757a0), //
-        new THREE.Color(0x5b5ba8), //
-        new THREE.Color(0x5f5fb0), // Upper troposphere - lighter blue
-        new THREE.Color(0x6565b8), //
-        new THREE.Color(0x6b6bc0), //
-        new THREE.Color(0x7171c8), // Troposphere - sky blue
-        new THREE.Color(0x7777d0), //
-        new THREE.Color(0x7d7dd8), //
-        new THREE.Color(0x8383e0), //
-        new THREE.Color(0x87ceeb)  // Ground - bright sky blue
-    ];
-
-    const layerIndex = Math.min(Math.floor(scrollProgress * (bgColors.length - 1)), bgColors.length - 2);
-    const layerProgress = (scrollProgress * (bgColors.length - 1)) % 1;
-    const currentColor = bgColors[layerIndex];
-    const nextColor = bgColors[Math.min(layerIndex + 1, bgColors.length - 1)];
-    const fogColor = new THREE.Color().lerpColors(currentColor, nextColor, layerProgress);
-
-    scene.fog = new THREE.FogExp2(fogColor, 0.0008);
-    renderer.setClearColor(fogColor);
+    // Simple black background - let sky and aerial photo handle colors
+    scene.fog = new THREE.FogExp2(0x000000, 0.0008);
+    renderer.setClearColor(0x000000);
 
     renderer.render(scene, camera);
 }

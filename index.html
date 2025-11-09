@@ -5,6 +5,8 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Jason's Interactive Portfolio - A Pig's Journey</title>
     <style>
+        @import url('https://fonts.googleapis.com/css2?family=Dancing+Script:wght@700&display=swap');
+
         * {
             margin: 0;
             padding: 0;
@@ -23,6 +25,40 @@
             position: fixed;
             top: 0;
             left: 0;
+        }
+
+        #intro-screen {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100vw;
+            height: 100vh;
+            background: #000;
+            z-index: 9999;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            opacity: 1;
+            transition: opacity 0.5s ease;
+        }
+
+        #intro-screen.fade-out {
+            opacity: 0;
+            pointer-events: none;
+        }
+
+        #intro-text {
+            font-family: 'Dancing Script', cursive;
+            font-size: 48px;
+            color: white;
+            text-align: center;
+            opacity: 0;
+            animation: softFadeIn 2s ease-in-out forwards;
+        }
+
+        @keyframes softFadeIn {
+            0% { opacity: 0; }
+            100% { opacity: 1; }
         }
 
 
@@ -143,7 +179,11 @@
     </style>
 </head>
 <body>
-    <div id="loading">
+    <div id="intro-screen">
+        <div id="intro-text">Jason Lee - Welcome to my website :)</div>
+    </div>
+
+    <div id="loading" style="display: none;">
         <div class="loading-spinner"></div>
         <p>Loading your interactive portfolio...</p>
     </div>
@@ -169,22 +209,29 @@
 
     <script type="module" src="/main.js"></script>
     <script>
-        // Auto-start journey and music
+        // Intro screen and auto-start journey
         window.addEventListener('load', () => {
+            const introScreen = document.getElementById('intro-screen');
             const audio = document.getElementById('background-music');
-            audio.volume = 0.3; // Set volume to 30%
+            audio.volume = 0.5;
 
+            // Show intro for 2 seconds, then fade out
             setTimeout(() => {
-                // Try to autoplay music
+                introScreen.classList.add('fade-out');
+
+                // Try to autoplay music when intro ends
                 audio.play().catch(e => {
                     console.log('Autoplay blocked by browser - interact with page to start music');
-                    // Play on any user interaction
                     document.addEventListener('click', () => audio.play(), { once: true });
                     document.addEventListener('wheel', () => audio.play(), { once: true });
                 });
 
-                window.dispatchEvent(new CustomEvent('journeyStart'));
-            }, 100);
+                // Start journey after fade
+                setTimeout(() => {
+                    introScreen.remove();
+                    window.dispatchEvent(new CustomEvent('journeyStart'));
+                }, 500);
+            }, 2000);
         });
 
         // Modal functions
