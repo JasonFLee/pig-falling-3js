@@ -136,6 +136,8 @@ let journeyStarted = false;
 let pigVelocityY = 0; // Pig's falling velocity
 const gravity = -0.5; // Gravity strength
 let pigTrailParticles = []; // Beautiful particle trail behind pig
+let atmosphericParticlesCreated = false; // Track if atmospheric particles have been created
+let lastScrollProgress = 0; // Track if pig is actually moving
 
 // Preload ALL textures immediately to prevent lag spike
 const textureLoader = new THREE.TextureLoader();
@@ -1479,7 +1481,6 @@ function init() {
     pig.visible = false; // Hide pig until journey starts
     scene.add(pig);
 
-    createStars();
     createSun();
     createMoon();
     createRocket();
@@ -1489,7 +1490,6 @@ function init() {
     createBirds();
     createClouds();
     createGround();
-    createAtmosphericParticles(); // Add beautiful atmospheric particles
 
     // Create rocket with banner
     createRocketWithBanner();
@@ -1510,6 +1510,10 @@ function init() {
         journeyStarted = true;
         pig.visible = true;
         // Music is already playing from HTML audio element
+
+        // Create stars when journey starts (background only, not particles)
+        createStars();
+        console.log('🎬 Journey started!');
     });
 }
 
@@ -1641,8 +1645,19 @@ function animate() {
         // No deceleration - constant speed all the way down
         pig.position.y = Math.max(targetY, earthSurfaceY); // Direct position, no smoothing
 
-        // Create beautiful trail particles as pig falls
-        if (!pigLanded && Math.random() > 0.7) {
+        // Check if pig is actually moving
+        const isMoving = Math.abs(scrollProgress - lastScrollProgress) > 0.0001;
+        lastScrollProgress = scrollProgress;
+
+        // Create atmospheric particles ONCE when pig first starts moving
+        if (isMoving && !pigLanded && !atmosphericParticlesCreated) {
+            createAtmosphericParticles();
+            atmosphericParticlesCreated = true;
+            console.log('✨ Pig is moving - atmospheric particles spawned!');
+        }
+
+        // Create beautiful trail particles ONLY when pig is moving
+        if (isMoving && !pigLanded && Math.random() > 0.7) {
             createTrailParticle(pig.position);
         }
 
