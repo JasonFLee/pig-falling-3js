@@ -846,11 +846,17 @@ function createHotAirBalloon() {
                         }
                     });
 
-                    // Position hot air balloon lower in atmosphere - much smaller and upright
+                    // Position hot air balloon - FINAL: back to lower atmosphere, correct orientation
                     object.position.set(200, -800, -150);
-                    object.scale.set(0.3, 0.3, 0.3); // Much smaller
-                    // No rotation.x needed - model should be upright by default
-                    object.rotation.y = Math.PI / 3;
+                    object.scale.set(0.3, 0.3, 0.3); // Correct small size
+                    // CORRECT ORIENTATION: Z rotation makes it vertical, Y rotation points it right direction
+                    object.rotation.x = 0;
+                    object.rotation.y = 0;
+                    object.rotation.z = -Math.PI / 2;
+
+                    console.log('🎈 Hot air balloon position:', object.position);
+                    console.log('🎈 Hot air balloon scale:', object.scale);
+                    console.log('🎈 Hot air balloon rotation:', object.rotation);
 
                     scene.add(object);
                     atmosphereLayers.push({ type: 'hotAirBalloon', group: object });
