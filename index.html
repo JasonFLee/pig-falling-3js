@@ -50,11 +50,16 @@
 
         #intro-text {
             font-family: 'Dancing Script', cursive;
-            font-size: 48px;
+            font-size: 56px;
             color: white;
             text-align: center;
             opacity: 0;
             animation: softFadeIn 2s ease-in-out forwards;
+            text-shadow:
+                0 0 20px rgba(255, 255, 255, 0.5),
+                0 0 40px rgba(74, 144, 226, 0.3),
+                0 0 60px rgba(74, 144, 226, 0.2);
+            letter-spacing: 2px;
         }
 
         @keyframes softFadeIn {
@@ -106,9 +111,25 @@
 
         .info-item {
             margin: 20px 0;
-            padding: 10px;
-            background: rgba(0, 0, 0, 0.5);
-            border-radius: 5px;
+            padding: 20px;
+            background: rgba(255, 255, 255, 0.1);
+            backdrop-filter: blur(20px) saturate(180%);
+            -webkit-backdrop-filter: blur(20px) saturate(180%);
+            border: 1px solid rgba(255, 255, 255, 0.3);
+            border-radius: 16px;
+            box-shadow:
+                0 8px 32px rgba(0, 0, 0, 0.3),
+                inset 0 0 0 1px rgba(255, 255, 255, 0.1);
+            transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+            transform: translateX(0);
+        }
+
+        .info-item:hover {
+            background: rgba(255, 255, 255, 0.15);
+            transform: translateX(5px) scale(1.02);
+            box-shadow:
+                0 12px 48px rgba(0, 0, 0, 0.4),
+                inset 0 0 0 1px rgba(255, 255, 255, 0.2);
         }
 
         #buttons-overlay {
@@ -122,21 +143,54 @@
         .link-button {
             display: block;
             margin: 15px 0;
-            padding: 15px 25px;
-            background: #4a90e2;
+            padding: 16px 32px;
+            background: rgba(74, 144, 226, 0.3);
+            backdrop-filter: blur(20px) saturate(180%);
+            -webkit-backdrop-filter: blur(20px) saturate(180%);
             color: white;
             text-decoration: none;
-            border-radius: 5px;
+            border-radius: 14px;
             font-weight: bold;
+            font-size: 15px;
             text-align: center;
-            border: 2px solid white;
-            transition: all 0.3s;
-            box-shadow: 0 0 10px rgba(0, 0, 0, 0.5);
+            border: 2px solid rgba(255, 255, 255, 0.4);
+            transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+            box-shadow:
+                0 8px 32px rgba(74, 144, 226, 0.3),
+                inset 0 0 0 1px rgba(255, 255, 255, 0.1);
+            position: relative;
+            overflow: hidden;
+        }
+
+        .link-button::before {
+            content: '';
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            width: 0;
+            height: 0;
+            border-radius: 50%;
+            background: rgba(255, 255, 255, 0.2);
+            transform: translate(-50%, -50%);
+            transition: width 0.6s, height 0.6s;
+        }
+
+        .link-button:hover::before {
+            width: 300px;
+            height: 300px;
         }
 
         .link-button:hover {
-            background: #357abd;
-            transform: scale(1.05);
+            background: rgba(74, 144, 226, 0.5);
+            transform: translateY(-3px) scale(1.05);
+            box-shadow:
+                0 12px 48px rgba(74, 144, 226, 0.5),
+                inset 0 0 0 1px rgba(255, 255, 255, 0.2);
+            border-color: rgba(255, 255, 255, 0.6);
+        }
+
+        .link-button:active {
+            transform: translateY(-1px) scale(1.02);
         }
 
         .fade-item {
@@ -221,18 +275,6 @@
             color: #667eea;
         }
 
-        #scroll-hint {
-            position: fixed;
-            bottom: 20px;
-            left: 50%;
-            transform: translateX(-50%);
-            color: white;
-            font-size: 16px;
-            z-index: 99;
-            animation: pulse 2s infinite;
-            text-shadow: 0 0 10px rgba(0, 0, 0, 0.8);
-        }
-
         @keyframes pulse {
             0%, 100% { opacity: 1; transform: translateX(-50%) translateY(0); }
             50% { opacity: 0.5; transform: translateX(-50%) translateY(5px); }
@@ -312,7 +354,6 @@
         <a id="btn-linkedin" href="https://www.linkedin.com/in/jason-lee-660690188/" target="_blank" class="link-button fade-item">LinkedIn Profile</a>
         <a id="btn-documentary" href="https://www.youtube.com/watch?v=E4CKj5Ng6kM" target="_blank" class="link-button fade-item">Watch Documentary</a>
     </div>
-    <div id="scroll-hint">↓ Scroll down to see the pig fall ↓</div>
 
     <!-- Frank Ocean Music -->
     <audio id="background-music" autoplay loop>

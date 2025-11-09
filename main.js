@@ -3,6 +3,8 @@ import { Sky } from 'three/examples/jsm/objects/Sky.js';
 import { OBJLoader } from 'three/examples/jsm/loaders/OBJLoader.js';
 import { MTLLoader } from 'three/examples/jsm/loaders/MTLLoader.js';
 import { FBXLoader } from 'three/examples/jsm/loaders/FBXLoader.js';
+import { EffectComposer, RenderPass, EffectPass, BloomEffect, DepthOfFieldEffect, VignetteEffect, NoiseEffect, SMAAEffect } from 'postprocessing';
+import { GUI } from 'lil-gui';
 
 // Scene setup
 const scene = new THREE.Scene();
@@ -16,6 +18,82 @@ renderer.toneMappingExposure = 1.2;
 renderer.shadowMap.enabled = true;
 renderer.shadowMap.type = THREE.PCFSoftShadowMap;
 document.getElementById('canvas-container').appendChild(renderer.domElement);
+
+// Post-processing setup for stunning visual effects (TEMPORARILY DISABLED FOR DEBUGGING)
+let composer, bloomEffect, depthOfFieldEffect;
+const USE_POST_PROCESSING = false; // Toggle this to enable/disable post-processing
+
+if (USE_POST_PROCESSING) {
+    try {
+        composer = new EffectComposer(renderer, {
+            frameBufferType: THREE.HalfFloatType,
+            multisampling: 8
+        });
+
+        // Add render pass
+        const renderPass = new RenderPass(scene, camera);
+        composer.addPass(renderPass);
+
+        // Create stunning bloom effect for glowing elements
+        bloomEffect = new BloomEffect({
+            intensity: 2.0,
+            luminanceThreshold: 0.4,
+            luminanceSmoothing: 0.3,
+            mipmapBlur: true,
+            radius: 0.85,
+            levels: 8
+        });
+
+        // Cinematic depth of field
+        depthOfFieldEffect = new DepthOfFieldEffect(camera, {
+            focusDistance: 0.0,
+            focalLength: 0.05,
+            bokehScale: 3.0,
+            height: 480
+        });
+
+        // Film grain for atmosphere
+        const noiseEffect = new NoiseEffect({
+            premultiply: true
+        });
+        noiseEffect.blendMode.opacity.value = 0.15;
+
+        // Vignette for cinematic framing
+        const vignetteEffect = new VignetteEffect({
+            offset: 0.35,
+            darkness: 0.6
+        });
+
+        // Anti-aliasing
+        const smaaEffect = new SMAAEffect();
+
+        // Combine all effects
+        const effectPass = new EffectPass(
+            camera,
+            bloomEffect,
+            depthOfFieldEffect,
+            noiseEffect,
+            vignetteEffect,
+            smaaEffect
+        );
+        composer.addPass(effectPass);
+
+        // Debug GUI for tweaking effects in real-time
+        const gui = new GUI();
+        const effectsFolder = gui.addFolder('Visual Effects');
+        effectsFolder.add(bloomEffect, 'intensity', 0, 5, 0.1).name('Bloom Intensity');
+        effectsFolder.add(bloomEffect, 'luminanceThreshold', 0, 1, 0.01).name('Bloom Threshold');
+        effectsFolder.add(depthOfFieldEffect.bokehScale, 'value', 0, 10, 0.1).name('Bokeh Scale');
+        effectsFolder.add(noiseEffect.blendMode.opacity, 'value', 0, 1, 0.01).name('Film Grain');
+        effectsFolder.add(vignetteEffect.uniforms.get('offset'), 'value', 0, 1, 0.01).name('Vignette Offset');
+        effectsFolder.add(vignetteEffect.uniforms.get('darkness'), 'value', 0, 2, 0.01).name('Vignette Darkness');
+        effectsFolder.close();
+
+        console.log('🎨 Post-processing effects initialized!');
+    } catch (error) {
+        console.error('Failed to initialize post-processing:', error);
+    }
+}
 
 // Sky setup
 const sky = new Sky();
@@ -49,6 +127,7 @@ const particles = [];
 const atmosphereLayers = [];
 const sparkles = [];
 const explosions = [];
+const atmosphericParticles = []; // Beautiful layered atmospheric particles
 let pigLanded = false;
 let pigWalkingAway = false;
 let balloonsReleased = false;
@@ -56,6 +135,7 @@ let landingTime = 0;
 let journeyStarted = false;
 let pigVelocityY = 0; // Pig's falling velocity
 const gravity = -0.5; // Gravity strength
+let pigTrailParticles = []; // Beautiful particle trail behind pig
 
 // Preload ALL textures immediately to prevent lag spike
 const textureLoader = new THREE.TextureLoader();
@@ -181,10 +261,12 @@ function createBalloons() {
         balloonGeometry.scale(0.9, 1.2, 0.9);
         const balloonMaterial = new THREE.MeshStandardMaterial({
             color: colors[i],
-            roughness: 0.3,
-            metalness: 0.5,
+            roughness: 0.2,
+            metalness: 0.1,
             emissive: colors[i],
-            emissiveIntensity: 0.2
+            emissiveIntensity: 0.8, // Much brighter glow for bloom effect
+            clearcoat: 0.8,
+            clearcoatRoughness: 0.2
         });
         const balloon = new THREE.Mesh(balloonGeometry, balloonMaterial);
 
@@ -233,25 +315,45 @@ function createBalloons() {
     return balloonGroup;
 }
 
-// Create sun
+// Create sun with enhanced glow
 function createSun() {
-    const sunGeometry = new THREE.SphereGeometry(150, 32, 32); // Smaller geometry for performance
-    const sunMaterial = new THREE.MeshBasicMaterial({
+    const sunGeometry = new THREE.SphereGeometry(150, 32, 32);
+
+    // Enhanced sun material with strong emissive glow for bloom
+    const sunMaterial = new THREE.MeshStandardMaterial({
         map: sunTexturePreload,
-        color: 0xffffaa, // Bright yellow-white
-        fog: false // Disable fog on sun
+        color: 0xffffaa,
+        emissive: 0xffff66,
+        emissiveIntensity: 2.5,
+        emissiveMap: sunTexturePreload,
+        fog: false,
+        toneMapped: false // Prevent tone mapping to allow bloom to work properly
     });
+
     const sun = new THREE.Mesh(sunGeometry, sunMaterial);
-    // Position sun closer to camera and to the right
     sun.position.set(400, 200, -200);
     scene.add(sun);
 
     console.log('Sun created at position:', sun.position);
 
-    // Add sun light
-    const sunLight = new THREE.PointLight(0xffffcc, 3, 5000);
+    // Enhanced sun light with warmer color
+    const sunLight = new THREE.PointLight(0xffd700, 4, 6000);
     sunLight.position.copy(sun.position);
+    sunLight.castShadow = false; // Don't cast shadows for performance
     scene.add(sunLight);
+
+    // Add sun glow effect
+    const glowGeometry = new THREE.SphereGeometry(180, 32, 32);
+    const glowMaterial = new THREE.MeshBasicMaterial({
+        color: 0xffdd44,
+        transparent: true,
+        opacity: 0.15,
+        blending: THREE.AdditiveBlending,
+        fog: false
+    });
+    const sunGlow = new THREE.Mesh(glowGeometry, glowMaterial);
+    sunGlow.position.copy(sun.position);
+    scene.add(sunGlow);
 }
 
 // Create moon
@@ -1055,9 +1157,12 @@ function createOfficeBuilding(group, i, total) {
         for (let w = 0; w < 3; w++) {
             const winGeo = new THREE.BoxGeometry(3, 4, 0.4);
             const winMat = new THREE.MeshStandardMaterial({
-                color: 0xffff88,
+                color: 0xffffcc,
                 emissive: 0xffff00,
-                emissiveIntensity: 0.8
+                emissiveIntensity: 1.5, // Stronger glow for bloom
+                toneMapped: false, // Allow bloom to work properly
+                roughness: 0.1,
+                metalness: 0.1
             });
 
             // Front side
@@ -1205,6 +1310,98 @@ function createExplosion(position) {
     }
 }
 
+// Create beautiful trail particle behind pig
+function createTrailParticle(position) {
+    const geometry = new THREE.SphereGeometry(0.2, 8, 8);
+    const hue = Math.random() * 0.3 + 0.5; // Blue to pink range
+    const color = new THREE.Color().setHSL(hue, 1.0, 0.7);
+
+    const material = new THREE.MeshBasicMaterial({
+        color: color,
+        transparent: true,
+        opacity: 0.8,
+        blending: THREE.AdditiveBlending
+    });
+
+    const particle = new THREE.Mesh(geometry, material);
+    particle.position.copy(position);
+    particle.position.x += (Math.random() - 0.5) * 2;
+    particle.position.y += (Math.random() - 0.5) * 2;
+    particle.position.z += (Math.random() - 0.5) * 2;
+
+    particle.velocity = new THREE.Vector3(
+        (Math.random() - 0.5) * 0.3,
+        Math.random() * 0.5 - 0.2,
+        (Math.random() - 0.5) * 0.3
+    );
+    particle.life = 1.0;
+    particle.scale.set(1, 1, 1);
+
+    scene.add(particle);
+    pigTrailParticles.push(particle);
+}
+
+// Create atmospheric particles based on altitude
+function createAtmosphericParticles() {
+    // Create floating particles for different atmospheric layers
+    for (let i = 0; i < 200; i++) {
+        const geometry = new THREE.SphereGeometry(0.5 + Math.random() * 1, 6, 6);
+
+        // Determine particle type based on altitude
+        const altitude = (Math.random() - 0.5) * 4000;
+        let color, emissiveIntensity;
+
+        if (altitude > 1000) {
+            // Space - bright blue/white stardust
+            color = new THREE.Color().setHSL(0.6, 0.8, 0.9);
+            emissiveIntensity = 0.8;
+        } else if (altitude > 0) {
+            // Upper atmosphere - aurora colors
+            color = new THREE.Color().setHSL(Math.random() * 0.3 + 0.5, 0.9, 0.7);
+            emissiveIntensity = 0.6;
+        } else if (altitude > -1200) {
+            // Mid atmosphere - wispy white
+            color = new THREE.Color(0xffffff);
+            emissiveIntensity = 0.3;
+        } else {
+            // Lower atmosphere - soft glowing particles
+            color = new THREE.Color().setHSL(0.1, 0.3, 0.8);
+            emissiveIntensity = 0.4;
+        }
+
+        const material = new THREE.MeshStandardMaterial({
+            color: color,
+            emissive: color,
+            emissiveIntensity: emissiveIntensity,
+            transparent: true,
+            opacity: 0.6,
+            blending: THREE.AdditiveBlending,
+            fog: false
+        });
+
+        const particle = new THREE.Mesh(geometry, material);
+        particle.position.set(
+            (Math.random() - 0.5) * 1000,
+            altitude,
+            (Math.random() - 0.5) * 1000
+        );
+
+        particle.userData.velocity = new THREE.Vector3(
+            (Math.random() - 0.5) * 0.2,
+            (Math.random() - 0.5) * 0.1,
+            (Math.random() - 0.5) * 0.2
+        );
+        particle.userData.baseAltitude = altitude;
+        particle.userData.floatPhase = Math.random() * Math.PI * 2;
+        particle.userData.baseEmissiveIntensity = emissiveIntensity; // Store original intensity
+
+        scene.add(particle);
+        atmosphericParticles.push(particle);
+    }
+
+    console.log('✨ Created', atmosphericParticles.length, 'atmospheric particles');
+}
+
 // Create Earth globe - OPTIMIZED FOR PERFORMANCE
 function createGround() {
     console.log('Creating Earth...');
@@ -1292,6 +1489,7 @@ function init() {
     createBirds();
     createClouds();
     createGround();
+    createAtmosphericParticles(); // Add beautiful atmospheric particles
 
     // Create rocket with banner
     createRocketWithBanner();
@@ -1442,6 +1640,11 @@ function animate() {
 
         // No deceleration - constant speed all the way down
         pig.position.y = Math.max(targetY, earthSurfaceY); // Direct position, no smoothing
+
+        // Create beautiful trail particles as pig falls
+        if (!pigLanded && Math.random() > 0.7) {
+            createTrailParticle(pig.position);
+        }
 
         // Check if just landed (when touching surface)
         if (pig.position.y <= earthSurfaceY + 2 && !pigLanded) {
@@ -1758,11 +1961,75 @@ function animate() {
         }
     }
 
+    // Update beautiful trail particles
+    for (let i = pigTrailParticles.length - 1; i >= 0; i--) {
+        const particle = pigTrailParticles[i];
+        particle.position.add(particle.velocity);
+        particle.velocity.multiplyScalar(0.98); // Drag
+        particle.life -= 0.02;
+        particle.material.opacity = particle.life * 0.8;
+        particle.scale.setScalar(particle.life * 1.5);
+
+        if (particle.life <= 0) {
+            scene.remove(particle);
+            particle.geometry.dispose();
+            particle.material.dispose();
+            pigTrailParticles.splice(i, 1);
+        }
+    }
+
+    // Animate atmospheric particles with floating motion
+    atmosphericParticles.forEach((particle, i) => {
+        // Gentle floating motion
+        particle.userData.floatPhase += 0.01;
+        particle.position.add(particle.userData.velocity);
+
+        // Oscillate around base altitude
+        particle.position.y = particle.userData.baseAltitude +
+            Math.sin(particle.userData.floatPhase) * 5;
+
+        // Wrap around edges for infinite field
+        if (particle.position.x > 500) particle.position.x = -500;
+        if (particle.position.x < -500) particle.position.x = 500;
+        if (particle.position.z > 500) particle.position.z = -500;
+        if (particle.position.z < -500) particle.position.z = 500;
+
+        // Pulse emissive intensity
+        const baseIntensity = particle.userData.baseEmissiveIntensity;
+        particle.material.emissiveIntensity = baseIntensity +
+            Math.sin(time * 2 + i) * 0.2;
+
+        // Gentle rotation
+        particle.rotation.y += 0.005;
+        particle.rotation.x += 0.003;
+    });
+
     // Simple black background - let sky and aerial photo handle colors
     scene.fog = new THREE.FogExp2(0x000000, 0.0008);
     renderer.setClearColor(0x000000);
 
-    renderer.render(scene, camera);
+    // Update depth of field focus to follow the pig
+    if (USE_POST_PROCESSING && pig && journeyStarted && depthOfFieldEffect) {
+        const distance = camera.position.distanceTo(pig.position);
+        depthOfFieldEffect.uniforms.get('focusDistance').value = distance / 1000;
+
+        // Adjust bokeh intensity based on altitude for dramatic effect
+        const altitudeProgress = Math.abs(pig.position.y / 2300);
+        const bokehIntensity = THREE.MathUtils.lerp(2.0, 5.0, altitudeProgress);
+        depthOfFieldEffect.bokehScale.value = bokehIntensity;
+    }
+
+    // Render with post-processing (with fallback)
+    if (USE_POST_PROCESSING && composer) {
+        try {
+            composer.render();
+        } catch (error) {
+            console.error('Post-processing error:', error);
+            renderer.render(scene, camera);
+        }
+    } else {
+        renderer.render(scene, camera);
+    }
 }
 
 // Click to auto-descend smoothly
@@ -1775,11 +2042,6 @@ window.addEventListener('click', (e) => {
 
     // Toggle auto-descent on click
     isDescending = !isDescending;
-
-    // Hide scroll hint when clicked
-    if (isDescending) {
-        document.getElementById('scroll-hint').style.opacity = '0';
-    }
 });
 
 // Also allow scroll wheel for manual control
@@ -1817,16 +2079,6 @@ function updateScroll() {
 
     updateLayerInfo();
 
-    // Hide scroll hint when moving
-    if (scrollProgress > 0.05) {
-        document.getElementById('scroll-hint').style.opacity = '0';
-    }
-
-    // Hide scroll hint completely at ground
-    if (scrollProgress >= 0.99) {
-        document.getElementById('scroll-hint').style.display = 'none';
-    }
-
     requestAnimationFrame(updateScroll);
 }
 
@@ -1835,6 +2087,9 @@ window.addEventListener('resize', () => {
     camera.aspect = window.innerWidth / window.innerHeight;
     camera.updateProjectionMatrix();
     renderer.setSize(window.innerWidth, window.innerHeight);
+    if (USE_POST_PROCESSING && composer) {
+        composer.setSize(window.innerWidth, window.innerHeight);
+    }
 });
 
 // Start
