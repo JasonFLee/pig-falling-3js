@@ -773,9 +773,9 @@ function createUFO() {
                 }
             });
 
-            // Position UFO in space (high up)
-            ufo.position.set(150, 500, -300);
-            ufo.scale.set(2, 2, 2);
+            // Position UFO in space (high up, far from sun)
+            ufo.position.set(-300, 700, -900);
+            ufo.scale.set(3, 3, 3);
             ufo.rotation.y = Math.PI / 4;
 
             // Add glow for UFO
@@ -810,9 +810,9 @@ function createHermes() {
                 loadedCount++;
 
                 if (loadedCount === modules.length) {
-                    // Position Hermes way up in space - much smaller, far from sun
-                    hermesGroup.position.set(-500, 900, -800);
-                    hermesGroup.scale.set(0.1, 0.1, 0.1); // Much smaller
+                    // Position Hermes way up in space - far from sun, visible size
+                    hermesGroup.position.set(-600, 800, -700);
+                    hermesGroup.scale.set(0.3, 0.3, 0.3); // Visible but small
                     hermesGroup.rotation.y = Math.PI / 6;
 
                     scene.add(hermesGroup);
@@ -849,7 +849,7 @@ function createHotAirBalloon() {
                     // Position hot air balloon lower in atmosphere - much smaller and upright
                     object.position.set(200, -800, -150);
                     object.scale.set(0.3, 0.3, 0.3); // Much smaller
-                    object.rotation.x = -Math.PI / 2; // Fix orientation - make it upright
+                    // No rotation.x needed - model should be upright by default
                     object.rotation.y = Math.PI / 3;
 
                     scene.add(object);
@@ -1684,7 +1684,7 @@ function init() {
     createHermes(); // Hermes spacecraft way up in space
     createHotAirBalloon(); // Hot air balloon towards the top
     createUpHouse(); // Up house with balloons in troposphere
-    createAirplane(); // Just one airplane
+    // createAirplane(); // Removed - user saw two objects that looked similar
     createBirds();
     createClouds();
     createGround();
