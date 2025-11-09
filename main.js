@@ -1799,6 +1799,18 @@ function animate() {
             landingTime = time;
             createExplosion(pig.position);
             pig.rotation.set(0, 0, 0);
+
+            // Remove balloons and change pig to ocean blue when landing
+            if (balloonGroup) {
+                balloonGroup.visible = false;
+            }
+            // Change pig color to ocean blue
+            pig.traverse((child) => {
+                if (child.isMesh && child.material) {
+                    child.material.color.set(0x006994); // Ocean blue
+                    child.material.emissive.set(0x003355);
+                }
+            });
         }
 
         // Check if leaving ground
@@ -1815,23 +1827,21 @@ function animate() {
             pig.rotation.z = Math.cos(time * 0.3) * 0.15;
         }
 
-        // Pig floats away after landing (held by balloons)
+        // Pig sinks into ocean after landing (without balloons)
         if (pigLanded && !pigWalkingAway && (time - landingTime) > 1) {
             pigWalkingAway = true;
         }
 
         if (pigWalkingAway) {
-            // Float QUICKLY UP to space! (balloons lifting pig away)
-            const floatTime = time - landingTime - 1; // Time since starting to float
-            pig.position.y = earthSurfaceY + floatTime * 3; // Start at ground, float up quickly
-            pig.rotation.y += 0.02; // Gentle spin
+            // Sink slowly into the ocean
+            const sinkTime = time - landingTime - 1; // Time since starting to sink
+            pig.position.y = earthSurfaceY - sinkTime * 0.5; // Sink down slowly
+            pig.rotation.y += 0.01; // Gentle spin
 
-            // Gentle swaying motion as it rises
-            pig.position.x = Math.sin(time * 0.8) * 3; // Gentle drift side to side
-            pig.rotation.x = Math.sin(time * 2) * 0.1;
-            pig.rotation.z = Math.cos(time * 1.5) * 0.1;
-
-            // Let it float far into the sky!
+            // Gentle swaying motion as it sinks
+            pig.position.x = Math.sin(time * 0.5) * 2; // Gentle drift
+            pig.rotation.x = Math.sin(time * 1.5) * 0.05;
+            pig.rotation.z = Math.cos(time * 1.2) * 0.05;
         }
 
         // Balloon animations - keep floating throughout
@@ -2149,9 +2159,9 @@ function animate() {
         particle.rotation.x += 0.003;
     });
 
-    // Simple black background - let sky and aerial photo handle colors
-    scene.fog = new THREE.FogExp2(0x000000, 0.0008);
-    renderer.setClearColor(0x000000);
+    // Sky blue background to match skybox and hide grey seam
+    scene.fog = new THREE.FogExp2(0x87CEEB, 0.0008); // Sky blue fog
+    renderer.setClearColor(0x87CEEB); // Sky blue background
 
     // Update depth of field focus to follow the pig
     if (USE_POST_PROCESSING && pig && journeyStarted && depthOfFieldEffect) {
