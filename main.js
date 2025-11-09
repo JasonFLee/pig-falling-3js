@@ -57,11 +57,6 @@ let journeyStarted = false;
 let pigVelocityY = 0; // Pig's falling velocity
 const gravity = -0.5; // Gravity strength
 
-// Audio setup for Frank Ocean
-const audio = new Audio('Frank Ocean - Pink  White(instrumental).mp3');
-audio.loop = true;
-audio.volume = 0.5;
-
 // Preload ALL textures immediately to prevent lag spike
 const textureLoader = new THREE.TextureLoader();
 const earthTexturesPreload = {
@@ -516,6 +511,78 @@ function createRocket() {
 }
 
 // Meteors removed per user request
+
+// Create floating text in 3D space
+function createFloatingText(text, position, size = 8) {
+    const canvas = document.createElement('canvas');
+    canvas.width = 1024;
+    canvas.height = 256;
+    const ctx = canvas.getContext('2d');
+
+    ctx.fillStyle = '#ffffff';
+    ctx.font = `bold ${size * 10}px Arial`;
+    ctx.textAlign = 'center';
+    ctx.textBaseline = 'middle';
+    ctx.fillText(text, 512, 128);
+
+    const texture = new THREE.CanvasTexture(canvas);
+    const geometry = new THREE.PlaneGeometry(size * 5, size * 1.25);
+    const material = new THREE.MeshBasicMaterial({
+        map: texture,
+        transparent: true,
+        opacity: 0.9,
+        side: THREE.DoubleSide
+    });
+
+    const mesh = new THREE.Mesh(geometry, material);
+    mesh.position.copy(position);
+    scene.add(mesh);
+    atmosphereLayers.push({ type: 'floatingText', group: mesh });
+
+    return mesh;
+}
+
+// Create clickable 3D button
+function create3DButton(text, position, url, size = 6) {
+    const canvas = document.createElement('canvas');
+    canvas.width = 512;
+    canvas.height = 128;
+    const ctx = canvas.getContext('2d');
+
+    // Button background
+    ctx.fillStyle = '#4a90e2';
+    ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+    // Border
+    ctx.strokeStyle = '#ffffff';
+    ctx.lineWidth = 8;
+    ctx.strokeRect(4, 4, canvas.width - 8, canvas.height - 8);
+
+    // Text
+    ctx.fillStyle = '#ffffff';
+    ctx.font = `bold ${size * 8}px Arial`;
+    ctx.textAlign = 'center';
+    ctx.textBaseline = 'middle';
+    ctx.fillText(text, canvas.width / 2, canvas.height / 2);
+
+    const texture = new THREE.CanvasTexture(canvas);
+    const geometry = new THREE.PlaneGeometry(size * 4, size);
+    const material = new THREE.MeshBasicMaterial({
+        map: texture,
+        transparent: true,
+        opacity: 0.95,
+        side: THREE.DoubleSide
+    });
+
+    const mesh = new THREE.Mesh(geometry, material);
+    mesh.position.copy(position);
+    mesh.userData.isClickable = true;
+    mesh.userData.url = url;
+    scene.add(mesh);
+    atmosphereLayers.push({ type: 'button', group: mesh });
+
+    return mesh;
+}
 
 // Create planes with banners
 function createPlaneWithBanner(message, position, rotation) {
@@ -1230,6 +1297,8 @@ function init() {
     createRocketWithBanner();
     createPlaneWithBanner('PORTFOLIO 2024', new THREE.Vector3(-180, -1200, 180), Math.PI / 2);
 
+    // Info and buttons are now in HTML overlay, not 3D space
+
     setupLighting();
 
     camera.position.set(0, 0, 25);
@@ -1242,11 +1311,7 @@ function init() {
     window.addEventListener('journeyStart', () => {
         journeyStarted = true;
         pig.visible = true;
-
-        // Play Frank Ocean music
-        audio.play().catch(err => {
-            console.log('Audio autoplay prevented, will play on user interaction:', err);
-        });
+        // Music is already playing from HTML audio element
     });
 }
 
@@ -1276,15 +1341,15 @@ window.addEventListener('click', (event) => {
     mouse.y = -(event.clientY / window.innerHeight) * 2 + 1;
 
     raycaster.setFromCamera(mouse, camera);
-    const clickableObjects = [resumesTextMesh, projectsTextMesh].filter(m => m);
-    const intersects = raycaster.intersectObjects(clickableObjects);
+
+    // Check for clickable 3D buttons
+    const clickableButtons = scene.children.filter(obj => obj.userData.isClickable);
+    const intersects = raycaster.intersectObjects(clickableButtons);
 
     if (intersects.length > 0) {
-        const action = intersects[0].object.userData.action;
-        if (action === 'showResumes' && window.showResumes) {
-            window.showResumes();
-        } else if (action === 'showProjects' && window.showProjects) {
-            window.showProjects();
+        const url = intersects[0].object.userData.url;
+        if (url) {
+            window.open(url, '_blank');
         }
     }
 });

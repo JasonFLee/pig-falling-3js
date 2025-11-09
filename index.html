@@ -61,6 +61,95 @@
             100% { opacity: 1; }
         }
 
+        #click-indicator {
+            position: fixed;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            color: white;
+            font-size: 24px;
+            z-index: 100;
+            text-align: center;
+            opacity: 0;
+            pointer-events: none;
+            text-shadow: 0 0 10px rgba(0, 0, 0, 0.8);
+        }
+
+        #click-indicator.show {
+            animation: pulse 2s infinite;
+            opacity: 1;
+        }
+
+        .click-arrow {
+            font-size: 48px;
+            display: block;
+            animation: bounce 1.5s infinite;
+        }
+
+        @keyframes bounce {
+            0%, 100% { transform: translateY(0); }
+            50% { transform: translateY(-10px); }
+        }
+
+        #info-overlay {
+            position: fixed;
+            left: 20px;
+            top: 50%;
+            transform: translateY(-50%);
+            color: white;
+            font-size: 18px;
+            z-index: 50;
+            max-width: 300px;
+            opacity: 0;
+            transition: opacity 0.5s;
+            text-shadow: 0 0 10px rgba(0, 0, 0, 0.8);
+        }
+
+        #info-overlay.show {
+            opacity: 1;
+        }
+
+        .info-item {
+            margin: 20px 0;
+            padding: 10px;
+            background: rgba(0, 0, 0, 0.5);
+            border-radius: 5px;
+        }
+
+        #buttons-overlay {
+            position: fixed;
+            right: 20px;
+            top: 50%;
+            transform: translateY(-50%);
+            z-index: 50;
+            opacity: 0;
+            transition: opacity 0.5s;
+        }
+
+        #buttons-overlay.show {
+            opacity: 1;
+        }
+
+        .link-button {
+            display: block;
+            margin: 15px 0;
+            padding: 15px 25px;
+            background: #4a90e2;
+            color: white;
+            text-decoration: none;
+            border-radius: 5px;
+            font-weight: bold;
+            text-align: center;
+            border: 2px solid white;
+            transition: all 0.3s;
+            box-shadow: 0 0 10px rgba(0, 0, 0, 0.5);
+        }
+
+        .link-button:hover {
+            background: #357abd;
+            transform: scale(1.05);
+        }
+
 
 
 
@@ -200,6 +289,32 @@
     </div>
 
     <div id="canvas-container"></div>
+
+    <div id="click-indicator">
+        <span class="click-arrow">👇</span>
+        Click on the pig to start descent
+    </div>
+
+    <div id="info-overlay">
+        <div class="info-item">
+            <strong>Technical Program Manager</strong><br>Netflix
+        </div>
+        <div class="info-item">
+            <strong>Robotics Engineer</strong><br>Amazon
+        </div>
+        <div class="info-item">
+            <strong>Dartmouth College</strong><br>Engineering Management<br><em>(Student Council President)</em>
+        </div>
+        <div class="info-item">
+            <strong>Colorado School of Mines</strong><br>Computer Science
+        </div>
+    </div>
+
+    <div id="buttons-overlay">
+        <a href="https://jasonleeprojectpage.surge.sh/" target="_blank" class="link-button">View Projects</a>
+        <a href="https://www.linkedin.com/in/jason-lee-660690188/" target="_blank" class="link-button">LinkedIn Profile</a>
+        <a href="https://www.youtube.com/watch?v=E4CKj5Ng6kM" target="_blank" class="link-button">Watch Documentary</a>
+    </div>
     <div id="scroll-hint">↓ Scroll down to see the pig fall ↓</div>
 
     <!-- Frank Ocean Music -->
@@ -209,30 +324,47 @@
 
     <script type="module" src="/main.js"></script>
     <script>
-        // Intro screen and auto-start journey
+        // Start music and journey immediately
         window.addEventListener('load', () => {
             const introScreen = document.getElementById('intro-screen');
             const audio = document.getElementById('background-music');
             audio.volume = 0.5;
 
+            // Start music immediately
+            audio.play().catch(e => {
+                console.log('Autoplay blocked - will play on first interaction');
+                document.addEventListener('click', () => audio.play(), { once: true });
+            });
+
             // Show intro for 2 seconds, then fade out
             setTimeout(() => {
                 introScreen.classList.add('fade-out');
-
-                // Try to autoplay music when intro ends
-                audio.play().catch(e => {
-                    console.log('Autoplay blocked by browser - interact with page to start music');
-                    document.addEventListener('click', () => audio.play(), { once: true });
-                    document.addEventListener('wheel', () => audio.play(), { once: true });
-                });
 
                 // Start journey after fade
                 setTimeout(() => {
                     introScreen.remove();
                     window.dispatchEvent(new CustomEvent('journeyStart'));
+
+                    // Show click indicator
+                    setTimeout(() => {
+                        document.getElementById('click-indicator').classList.add('show');
+                    }, 500);
                 }, 500);
             }, 2000);
         });
+
+        // Show info and buttons when journey starts
+        window.addEventListener('journeyStart', () => {
+            setTimeout(() => {
+                document.getElementById('info-overlay').classList.add('show');
+                document.getElementById('buttons-overlay').classList.add('show');
+            }, 1000);
+        });
+
+        // Hide click indicator on first click
+        document.addEventListener('click', () => {
+            document.getElementById('click-indicator').classList.remove('show');
+        }, { once: true });
 
         // Modal functions
         function closeModal() {
