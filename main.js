@@ -1315,18 +1315,90 @@ function init() {
     });
 }
 
-// Update layer info
+// Update layer info and fade items
 function updateLayerInfo() {
     const infoElement = document.getElementById('info');
-    if (!infoElement) return; // Skip if element doesn't exist
+    if (infoElement) {
+        const currentLayer = layerInfo.find(layer =>
+            scrollProgress >= layer.start && scrollProgress <= layer.end
+        );
 
-    const currentLayer = layerInfo.find(layer =>
-        scrollProgress >= layer.start && scrollProgress <= layer.end
-    );
+        if (currentLayer) {
+            infoElement.querySelector('h2').textContent = currentLayer.name;
+            infoElement.querySelector('p').textContent = currentLayer.desc;
+        }
+    }
 
-    if (currentLayer) {
-        infoElement.querySelector('h2').textContent = currentLayer.name;
-        infoElement.querySelector('p').textContent = currentLayer.desc;
+    // Control fade in/out of info items based on scroll progress
+    // Netflix: 0.15 - 0.30 (thermosphere)
+    const netflix = document.getElementById('info-netflix');
+    if (netflix) {
+        if (scrollProgress >= 0.15 && scrollProgress <= 0.30) {
+            netflix.classList.add('visible');
+        } else {
+            netflix.classList.remove('visible');
+        }
+    }
+
+    // Amazon: 0.35 - 0.50 (mesosphere)
+    const amazon = document.getElementById('info-amazon');
+    if (amazon) {
+        if (scrollProgress >= 0.35 && scrollProgress <= 0.50) {
+            amazon.classList.add('visible');
+        } else {
+            amazon.classList.remove('visible');
+        }
+    }
+
+    // Dartmouth: 0.55 - 0.70 (stratosphere)
+    const dartmouth = document.getElementById('info-dartmouth');
+    if (dartmouth) {
+        if (scrollProgress >= 0.55 && scrollProgress <= 0.70) {
+            dartmouth.classList.add('visible');
+        } else {
+            dartmouth.classList.remove('visible');
+        }
+    }
+
+    // Mines: 0.75 - 0.90 (troposphere)
+    const mines = document.getElementById('info-mines');
+    if (mines) {
+        if (scrollProgress >= 0.75 && scrollProgress <= 0.90) {
+            mines.classList.add('visible');
+        } else {
+            mines.classList.remove('visible');
+        }
+    }
+
+    // Buttons fade in at different points
+    // Projects: 0.25 - 0.45
+    const btnProjects = document.getElementById('btn-projects');
+    if (btnProjects) {
+        if (scrollProgress >= 0.25 && scrollProgress <= 0.45) {
+            btnProjects.classList.add('visible');
+        } else {
+            btnProjects.classList.remove('visible');
+        }
+    }
+
+    // LinkedIn: 0.50 - 0.70
+    const btnLinkedin = document.getElementById('btn-linkedin');
+    if (btnLinkedin) {
+        if (scrollProgress >= 0.50 && scrollProgress <= 0.70) {
+            btnLinkedin.classList.add('visible');
+        } else {
+            btnLinkedin.classList.remove('visible');
+        }
+    }
+
+    // Documentary: 0.75 - 0.95
+    const btnDocumentary = document.getElementById('btn-documentary');
+    if (btnDocumentary) {
+        if (scrollProgress >= 0.75 && scrollProgress <= 0.95) {
+            btnDocumentary.classList.add('visible');
+        } else {
+            btnDocumentary.classList.remove('visible');
+        }
     }
 }
 

@@ -25,6 +25,7 @@
             position: fixed;
             top: 0;
             left: 0;
+            z-index: 1;
         }
 
         #intro-screen {
@@ -100,13 +101,7 @@
             font-size: 18px;
             z-index: 50;
             max-width: 300px;
-            opacity: 0;
-            transition: opacity 0.5s;
             text-shadow: 0 0 10px rgba(0, 0, 0, 0.8);
-        }
-
-        #info-overlay.show {
-            opacity: 1;
         }
 
         .info-item {
@@ -122,12 +117,6 @@
             top: 50%;
             transform: translateY(-50%);
             z-index: 50;
-            opacity: 0;
-            transition: opacity 0.5s;
-        }
-
-        #buttons-overlay.show {
-            opacity: 1;
         }
 
         .link-button {
@@ -148,6 +137,15 @@
         .link-button:hover {
             background: #357abd;
             transform: scale(1.05);
+        }
+
+        .fade-item {
+            opacity: 0;
+            transition: opacity 1s ease-in-out;
+        }
+
+        .fade-item.visible {
+            opacity: 1;
         }
 
 
@@ -291,29 +289,28 @@
     <div id="canvas-container"></div>
 
     <div id="click-indicator">
-        <span class="click-arrow">👇</span>
-        Click on the pig to start descent
+        <span class="click-arrow">👆</span>
     </div>
 
     <div id="info-overlay">
-        <div class="info-item">
+        <div id="info-netflix" class="info-item fade-item">
             <strong>Technical Program Manager</strong><br>Netflix
         </div>
-        <div class="info-item">
+        <div id="info-amazon" class="info-item fade-item">
             <strong>Robotics Engineer</strong><br>Amazon
         </div>
-        <div class="info-item">
+        <div id="info-dartmouth" class="info-item fade-item">
             <strong>Dartmouth College</strong><br>Engineering Management<br><em>(Student Council President)</em>
         </div>
-        <div class="info-item">
+        <div id="info-mines" class="info-item fade-item">
             <strong>Colorado School of Mines</strong><br>Computer Science
         </div>
     </div>
 
     <div id="buttons-overlay">
-        <a href="https://jasonleeprojectpage.surge.sh/" target="_blank" class="link-button">View Projects</a>
-        <a href="https://www.linkedin.com/in/jason-lee-660690188/" target="_blank" class="link-button">LinkedIn Profile</a>
-        <a href="https://www.youtube.com/watch?v=E4CKj5Ng6kM" target="_blank" class="link-button">Watch Documentary</a>
+        <a id="btn-projects" href="https://jasonleeprojectpage.surge.sh/" target="_blank" class="link-button fade-item">View Projects</a>
+        <a id="btn-linkedin" href="https://www.linkedin.com/in/jason-lee-660690188/" target="_blank" class="link-button fade-item">LinkedIn Profile</a>
+        <a id="btn-documentary" href="https://www.youtube.com/watch?v=E4CKj5Ng6kM" target="_blank" class="link-button fade-item">Watch Documentary</a>
     </div>
     <div id="scroll-hint">↓ Scroll down to see the pig fall ↓</div>
 
@@ -345,23 +342,21 @@
                     introScreen.remove();
                     window.dispatchEvent(new CustomEvent('journeyStart'));
 
-                    // Show click indicator
+                    // Show click indicator for 1.5 seconds then auto-hide
                     setTimeout(() => {
-                        document.getElementById('click-indicator').classList.add('show');
+                        const clickIndicator = document.getElementById('click-indicator');
+                        clickIndicator.classList.add('show');
+
+                        // Auto-hide after 1.5 seconds
+                        setTimeout(() => {
+                            clickIndicator.classList.remove('show');
+                        }, 1500);
                     }, 500);
                 }, 500);
             }, 2000);
         });
 
-        // Show info and buttons when journey starts
-        window.addEventListener('journeyStart', () => {
-            setTimeout(() => {
-                document.getElementById('info-overlay').classList.add('show');
-                document.getElementById('buttons-overlay').classList.add('show');
-            }, 1000);
-        });
-
-        // Hide click indicator on first click
+        // Hide click indicator immediately on click
         document.addEventListener('click', () => {
             document.getElementById('click-indicator').classList.remove('show');
         }, { once: true });
