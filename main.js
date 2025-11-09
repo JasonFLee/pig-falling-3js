@@ -849,8 +849,8 @@ function createHotAirBalloon() {
                     // Position hot air balloon - FINAL: back to lower atmosphere, correct orientation
                     object.position.set(200, -800, -150);
                     object.scale.set(0.3, 0.3, 0.3); // Correct small size
-                    // Basket pointing DOWN (6 o'clock): need PI rotation on Z to flip it 180 degrees
-                    object.rotation.x = 0;
+                    // Basket pointing DOWN: rotate on X to stand up, then flip on Z
+                    object.rotation.x = -Math.PI / 2;
                     object.rotation.y = 0;
                     object.rotation.z = Math.PI;
 
