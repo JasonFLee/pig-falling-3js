@@ -846,8 +846,8 @@ function createHotAirBalloon() {
                         }
                     });
 
-                    // Position hot air balloon - FINAL: back to lower atmosphere, correct orientation
-                    object.position.set(200, -800, -150);
+                    // Position hot air balloon - FAR in background, won't collide with pig
+                    object.position.set(-400, -900, -600); // Far to the side and back
                     object.scale.set(0.3, 0.3, 0.3); // Correct small size
                     // Basket pointing DOWN: rotate on X to stand up, then flip on Z
                     object.rotation.x = -Math.PI / 2;
@@ -2149,8 +2149,8 @@ function animate() {
         particle.rotation.x += 0.003;
     });
 
-    // Simple black background - let sky and aerial photo handle colors
-    scene.fog = new THREE.FogExp2(0x000000, 0.0008);
+    // Reduced fog to minimize grey seam visibility
+    scene.fog = new THREE.FogExp2(0x000000, 0.0003); // Much less fog
     renderer.setClearColor(0x000000);
 
     // Update depth of field focus to follow the pig
