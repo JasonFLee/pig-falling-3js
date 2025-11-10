@@ -345,18 +345,7 @@ function createSun() {
     sunLight.castShadow = false; // Don't cast shadows for performance
     scene.add(sunLight);
 
-    // Add sun glow effect
-    const glowGeometry = new THREE.SphereGeometry(180, 32, 32);
-    const glowMaterial = new THREE.MeshBasicMaterial({
-        color: 0xffdd44,
-        transparent: true,
-        opacity: 0.15,
-        blending: THREE.AdditiveBlending,
-        fog: false
-    });
-    const sunGlow = new THREE.Mesh(glowGeometry, glowMaterial);
-    sunGlow.position.copy(sun.position);
-    scene.add(sunGlow);
+    // Removed sun glow ring - user didn't like it
 }
 
 // Create moon
@@ -846,8 +835,8 @@ function createHotAirBalloon() {
                         }
                     });
 
-                    // Position hot air balloon - FAR in background, won't collide with pig
-                    object.position.set(-400, -900, -600); // Far to the side and back
+                    // Position hot air balloon - Later in descent, to the right
+                    object.position.set(400, -1500, -600); // To the right and lower in atmosphere
                     object.scale.set(0.3, 0.3, 0.3); // Correct small size
                     // Basket pointing DOWN: rotate on X to stand up, then flip on Z
                     object.rotation.x = -Math.PI / 2;
@@ -1688,7 +1677,7 @@ function init() {
     createRocket(); // Add third rocket
     createUFO(); // UFO in space
     createHermes(); // Hermes spacecraft way up in space
-    createHotAirBalloon(); // Hot air balloon towards the top
+    // createHotAirBalloon(); // Removed per user request
     createUpHouse(); // Up house with balloons in troposphere
     // createAirplane(); // Removed - user saw two objects that looked similar
     createBirds();
@@ -1768,12 +1757,15 @@ function animate() {
     // Pig animations with spinning as it falls
     if (pig && journeyStarted) {
         // Position based on scroll - pig lands on top of Earth sphere
-        // Earth radius is 500, center at -2300, so surface is at -1800
-        const earthSurfaceY = -1800;
+        // Earth radius is 500, center at -2200, so surface is at -1700
+        const earthSurfaceY = -1700;
         const targetY = -scrollProgress * 2300;
 
         // No deceleration - constant speed all the way down
-        pig.position.y = Math.max(targetY, earthSurfaceY); // Direct position, no smoothing
+        // ONLY control position with scroll when not floating back up
+        if (!pigWalkingAway) {
+            pig.position.y = Math.max(targetY, earthSurfaceY); // Direct position, no smoothing
+        }
 
         // Check if pig is actually moving
         const isMoving = Math.abs(scrollProgress - lastScrollProgress) > 0.0001;
@@ -1801,12 +1793,8 @@ function animate() {
             pig.rotation.set(0, 0, 0);
         }
 
-        // Check if leaving ground
-        if (pig.position.y > earthSurfaceY + 10 && pigLanded) {
-            pigLanded = false;
-            pigWalkingAway = false;
-            balloonsReleased = false;
-        }
+        // Once pig starts floating back to space, it stays floating - don't reset!
+        // (Removed reset logic that was causing glitching)
 
         // Spinning animation when falling
         if (!pigLanded) {
@@ -1815,15 +1803,15 @@ function animate() {
             pig.rotation.z = Math.cos(time * 0.3) * 0.15;
         }
 
-        // Pig floats away after landing (held by balloons)
-        if (pigLanded && !pigWalkingAway && (time - landingTime) > 1) {
+        // Pig floats away IMMEDIATELY after landing (held by balloons)
+        if (pigLanded && !pigWalkingAway && (time - landingTime) > 0.1) {
             pigWalkingAway = true;
         }
 
         if (pigWalkingAway) {
             // Float QUICKLY UP to space! (balloons lifting pig away)
-            const floatTime = time - landingTime - 1; // Time since starting to float
-            pig.position.y = earthSurfaceY + floatTime * 3; // Start at ground, float up quickly
+            const floatTime = time - landingTime - 0.1; // Time since starting to float
+            pig.position.y = earthSurfaceY + floatTime * 5; // Start at ground, float up quickly
             pig.rotation.y += 0.02; // Gentle spin
 
             // Gentle swaying motion as it rises
@@ -1881,36 +1869,43 @@ function animate() {
     let cameraOffset;
     let lookAtTarget;
 
-    if (pigLanded) {
-        // Fixed camera position when landed - lock camera, don't follow pig
-        cameraOffset = new THREE.Vector3(0, -1550, 100); // Pulled back and elevated overhead view
-        lookAtTarget = new THREE.Vector3(0, -1700, 0); // Look at landing spot, tilted up to avoid horizon
+    if (pigLanded && !pigWalkingAway) {
+        // Fixed camera position when just landed (brief moment)
+        cameraOffset = new THREE.Vector3(0, -1450, 100); // Pulled back and elevated overhead view
+        lookAtTarget = new THREE.Vector3(0, -1600, 0); // Look at landing spot, tilted up to avoid horizon
+    } else if (pigWalkingAway) {
+        // Camera pans out as pig floats back to space
+        const floatTime = time - landingTime - 0.1;
+        const panDistance = 100 + floatTime * 30; // Pan out progressively
+        const heightBoost = floatTime * 20; // Camera rises with pig
+        cameraOffset = new THREE.Vector3(0, pig.position.y + heightBoost, panDistance);
+        lookAtTarget = new THREE.Vector3(pig.position.x, pig.position.y, pig.position.z);
     } else {
         // SPIRAL DESCENT - multiple rotations as you fall
         const spiralRotations = 3; // 3 full rotations during descent
         const spiralAngle = scrollProgress * Math.PI * 2 * spiralRotations;
 
-        // Pan out much more as you get closer to ground
+        // Pan out much more as you get closer to ground (starts when blue atmosphere visible)
         let spiralRadius;
         let heightOffset;
-        if (scrollProgress < 0.85) {
+        if (scrollProgress < 0.75) {
             spiralRadius = 30 + (1 - scrollProgress) * 20; // Normal distance
             heightOffset = 15 - scrollProgress * 10; // Start above, get level/below
         } else {
-            // Pan out significantly in last 15% AND tilt up
-            const endProgress = (scrollProgress - 0.85) / 0.15;
-            spiralRadius = 40 + endProgress * 60; // Pan out to 100 units
-            heightOffset = 5 + endProgress * 80; // Tilt camera WAY up (raise height significantly)
+            // Pan out significantly in last 25% AND tilt up (when blue atmosphere visible)
+            const endProgress = (scrollProgress - 0.75) / 0.25;
+            spiralRadius = 40 + endProgress * 100; // Pan out to 140 units
+            heightOffset = 5 + endProgress * 120; // Tilt camera WAY up (raise height significantly)
         }
 
         // Camera angle tilts to look down more as you descend (but less at the end)
         let lookAheadY;
-        if (scrollProgress < 0.85) {
+        if (scrollProgress < 0.75) {
             lookAheadY = pig.position.y - scrollProgress * 50; // Look further down as you fall
         } else {
-            // At the end, look more level/up to avoid horizon fog
-            const endProgress = (scrollProgress - 0.85) / 0.15;
-            lookAheadY = pig.position.y - 42.5 + endProgress * 60; // Tilt view way up
+            // At the end, look more level/up to avoid horizon and show earth from above
+            const endProgress = (scrollProgress - 0.75) / 0.25;
+            lookAheadY = pig.position.y - 37.5 + endProgress * 80; // Tilt view way up
         }
 
         cameraOffset = new THREE.Vector3(
