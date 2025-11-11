@@ -740,7 +740,7 @@ function createPlaneWithBanner(message, position, rotation) {
 
             planeGroup.position.copy(position);
             planeGroup.rotation.set(-Math.PI / 2, 0, rotation); // Rotate to fix orientation - belly down, flying forward
-            planeGroup.scale.set(0.05, 0.05, 0.05); // Much smaller
+            planeGroup.scale.set(0.075, 0.075, 0.075); // 1.5x bigger
 
             scene.add(planeGroup);
             atmosphereLayers.push({ type: 'bannerPlane', group: planeGroup });
@@ -762,10 +762,11 @@ function createUFO() {
                 }
             });
 
-            // Position UFO in space (high up, far from sun)
-            ufo.position.set(-300, 700, -900);
-            ufo.scale.set(3, 3, 3);
+            // Position UFO in upper atmosphere - more visible
+            ufo.position.set(-200, 200, -300);
+            ufo.scale.set(5, 5, 5); // Bigger
             ufo.rotation.y = Math.PI / 4;
+            console.log('👽 UFO positioned at:', ufo.position);
 
             // Add glow for UFO
             const glowLight = new THREE.PointLight(0x00ff00, 3, 100);
@@ -835,9 +836,9 @@ function createHotAirBalloon() {
                         }
                     });
 
-                    // Position hot air balloon - Later in descent, to the right
-                    object.position.set(400, -1500, -600); // To the right and lower in atmosphere
-                    object.scale.set(0.3, 0.3, 0.3); // Correct small size
+                    // Position hot air balloon - Tiny in background, basket pointing down
+                    object.position.set(120, -1500, 0); // Mid-atmosphere level, clearly visible
+                    object.scale.set(0.01, 0.01, 0.01); // Super tiny
                     // Basket pointing DOWN: rotate on X to stand up, then flip on Z
                     object.rotation.x = -Math.PI / 2;
                     object.rotation.y = 0;
@@ -864,87 +865,58 @@ function createHotAirBalloon() {
 function createUpHouse() {
     const house = new THREE.Group();
 
-    // House base
-    const houseGeo = new THREE.BoxGeometry(8, 8, 8);
-    const houseMat = new THREE.MeshStandardMaterial({ color: 0xffcc99 });
-    const houseBase = new THREE.Mesh(houseGeo, houseMat);
-    houseBase.position.y = 4;
-    house.add(houseBase);
+    // Load UP.glb with balloons already attached
+    const gltfLoader = new GLTFLoader();
+    console.log('🔍 Attempting to load UP.glb...');
+    gltfLoader.load(
+        'UP.glb',
+        (gltf) => {
+            const object = gltf.scene;
+            console.log('✅ UP.glb loaded successfully!', object);
 
-    // Roof
-    const roofGeo = new THREE.ConeGeometry(6, 4, 4);
-    const roofMat = new THREE.MeshStandardMaterial({ color: 0x8b4513 });
-    const roof = new THREE.Mesh(roofGeo, roofMat);
-    roof.position.y = 10;
-    roof.rotation.y = Math.PI / 4;
-    house.add(roof);
+            object.traverse((child) => {
+                if (child.isMesh) {
+                    child.castShadow = true;
+                    child.receiveShadow = true;
+                    console.log('Found mesh in UP.glb:', child.name);
+                }
+            });
 
-    // Add WAY more colorful balloons clumped above house like in the movie "Up"
-    const balloonColors = [
-        0xff1493, 0x00bfff, 0xffd700, 0xff4500, 0x00ff7f,
-        0xff69b4, 0x9370db, 0xff6347, 0x1e90ff, 0xffa500,
-        0xff0000, 0x00ff00, 0x0000ff, 0xffff00, 0xff00ff,
-        0x00ffff, 0xff8c00, 0x9400d3, 0x32cd32, 0xff1493
-    ];
+            // Scale and position the house model - HUGE so it's visible
+            object.scale.set(5.0, 5.0, 5.0); // Way bigger
+            object.position.y = 0;
+            house.add(object);
+            console.log('🏠 Up house with balloons added to scene!');
+            console.log('House bounding box:', object);
 
-    // Create 100 balloons in a tight cluster/dome formation like the movie
-    for (let i = 0; i < 100; i++) {
-        const balloonGeo = new THREE.SphereGeometry(0.5, 12, 12);
-        balloonGeo.scale(0.9, 1.2, 0.9); // Balloon shape
+            // Fix materials - make fully opaque and visible
+            object.traverse((child) => {
+                if (child.isMesh && child.material) {
+                    child.material.transparent = false;
+                    child.material.opacity = 1.0;
+                    child.material.side = THREE.DoubleSide;
+                    child.material.depthWrite = true;
+                    child.material.depthTest = true;
+                    child.material.needsUpdate = true;
+                }
+            });
+        },
+        (progress) => {
+            console.log('Loading UP.glb:', (progress.loaded / progress.total * 100).toFixed(2) + '%');
+        },
+        (error) => {
+            console.error('❌ ERROR loading UP.glb:', error);
+            console.error('Error details:', error.message);
+        }
+    );
 
-        const color = balloonColors[Math.floor(Math.random() * balloonColors.length)];
-        const balloonMat = new THREE.MeshStandardMaterial({
-            color: color,
-            emissive: color,
-            emissiveIntensity: 0.4,
-            roughness: 0.3,
-            metalness: 0.1
-        });
-        const balloon = new THREE.Mesh(balloonGeo, balloonMat);
-
-        // Cluster balloons in a dome/sphere formation above the house
-        // Use spherical coordinates for even distribution
-        const phi = Math.acos(2 * Math.random() - 1); // Only upper hemisphere
-        const theta = Math.random() * Math.PI * 2;
-        const radius = 4 + Math.random() * 3; // Tight cluster
-
-        balloon.position.set(
-            Math.sin(phi) * Math.cos(theta) * radius,
-            12 + Math.abs(Math.cos(phi)) * radius, // Above house, dome shape
-            Math.sin(phi) * Math.sin(theta) * radius
-        );
-
-        house.add(balloon);
-    }
-
-    // Add many strings connecting balloons to house
-    for (let i = 0; i < 20; i++) {
-        const stringGeo = new THREE.CylinderGeometry(0.02, 0.02, 12, 4);
-        const stringMat = new THREE.MeshBasicMaterial({
-            color: 0xffffff,
-            transparent: true,
-            opacity: 0.6
-        });
-        const string = new THREE.Mesh(stringGeo, stringMat);
-
-        const angle = (i / 20) * Math.PI * 2;
-        const stringRadius = 2 + Math.random() * 2;
-        string.position.set(
-            Math.cos(angle) * stringRadius,
-            12,
-            Math.sin(angle) * stringRadius
-        );
-        string.rotation.z = (Math.random() - 0.5) * 0.3; // Slight tilt
-        house.add(string);
-    }
-
-    // Position Up house in the troposphere
-    house.position.set(-100, -1400, 200);
-    house.scale.set(2, 2, 2);
+    // Position Up house - under the plane, closer to camera
+    house.position.set(-120, -1200, 0); // Same X as plane, Z: 0 (closer!), lower Y
+    house.scale.set(5.0, 5.0, 5.0); // HUGE so you can see it
+    console.log('🏠 Up house positioned at:', house.position);
 
     scene.add(house);
     atmosphereLayers.push({ type: 'upHouse', group: house });
-    console.log('🏠 Up house with 100 balloons loaded (like the movie!)');
 }
 
 // Create airplane flying in the distance
@@ -996,7 +968,7 @@ function createAirplane() {
 function createBirds() {
     const birdGroup = new THREE.Group();
 
-    for (let i = 0; i < 8; i++) {
+    for (let i = 0; i < 20; i++) { // Increased from 8 to 20 birds
         const bird = new THREE.Group();
 
         // Simple bird shape - two triangular wings
@@ -1019,9 +991,9 @@ function createBirds() {
         const body = new THREE.Mesh(bodyGeo, wingMat);
         bird.add(body);
 
-        // Position birds in troposphere
-        const angle = (i / 8) * Math.PI * 2;
-        const radius = 100 + Math.random() * 150;
+        // Position birds in troposphere - spread out more
+        const angle = (i / 20) * Math.PI * 2;
+        const radius = 80 + Math.random() * 200; // Wider spread
         bird.position.set(
             Math.cos(angle) * radius,
             -1400 + Math.random() * 200,
@@ -1677,8 +1649,8 @@ function init() {
     createRocket(); // Add third rocket
     createUFO(); // UFO in space
     createHermes(); // Hermes spacecraft way up in space
-    // createHotAirBalloon(); // Removed per user request
-    createUpHouse(); // Up house with balloons in troposphere
+    createHotAirBalloon(); // Small hot air balloon in background
+    createUpHouse(); // Up house with actual 3D model and balloons
     // createAirplane(); // Removed - user saw two objects that looked similar
     createBirds();
     createClouds();
@@ -1686,7 +1658,7 @@ function init() {
 
     // Create rocket with banner
     createRocketWithBanner();
-    createPlaneWithBanner('PORTFOLIO 2024', new THREE.Vector3(-180, -1200, 180), Math.PI / 2);
+    createPlaneWithBanner('PORTFOLIO 2024', new THREE.Vector3(-120, -800, -250), Math.PI / 2); // Even further back in background
 
     // Info and buttons are now in HTML overlay, not 3D space
 
@@ -1874,10 +1846,11 @@ function animate() {
         cameraOffset = new THREE.Vector3(0, -1450, 100); // Pulled back and elevated overhead view
         lookAtTarget = new THREE.Vector3(0, -1600, 0); // Look at landing spot, tilted up to avoid horizon
     } else if (pigWalkingAway) {
-        // Camera pans out as pig floats back to space
+        // Camera pans out as pig floats back to space - NO LOCK, keep following
         const floatTime = time - landingTime - 0.1;
-        const panDistance = 100 + floatTime * 30; // Pan out progressively
-        const heightBoost = floatTime * 20; // Camera rises with pig
+        const panDistance = 100 + floatTime * 30; // Keep panning out continuously
+        const heightBoost = floatTime * 20; // Keep rising with pig
+
         cameraOffset = new THREE.Vector3(0, pig.position.y + heightBoost, panDistance);
         lookAtTarget = new THREE.Vector3(pig.position.x, pig.position.y, pig.position.z);
     } else {
@@ -1920,7 +1893,14 @@ function animate() {
     camera.position.lerp(cameraOffset, 0.15);
     camera.lookAt(lookAtTarget);
 
-    // Animate layers
+    // Animate layers - ALWAYS RUNS
+    if (pigWalkingAway && time - landingTime > 7) {
+        // Log every 60 frames when camera is locked
+        if (Math.floor(time * 60) % 60 === 0) {
+            console.log('🚨 ANIMATION LOOP STILL RUNNING AFTER LOCK! Layers:', atmosphereLayers.length);
+        }
+    }
+
     atmosphereLayers.forEach(layer => {
         if (layer.type === 'rocket') {
             // Animate rocket exhaust flame
@@ -1934,9 +1914,15 @@ function animate() {
 
         if (layer.type === 'clouds') {
             layer.group.children.forEach((cloud, i) => {
-                cloud.position.x += Math.sin(time + i) * 0.2;
+                // ALWAYS move clouds - continuously drift
+                cloud.position.x += 0.5; // Constant drift speed
                 cloud.rotation.y += 0.001;
                 if (cloud.position.x > 300) cloud.position.x = -300;
+
+                // Debug every 100 frames
+                if (Math.floor(time * 10) % 100 === 0 && i === 0) {
+                    console.log('☁️ Cloud moving! X:', cloud.position.x.toFixed(2));
+                }
             });
         }
 
