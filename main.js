@@ -762,9 +762,9 @@ function createUFO() {
                 }
             });
 
-            // Position UFO in upper atmosphere - more visible
-            ufo.position.set(-200, 200, -300);
-            ufo.scale.set(5, 5, 5); // Bigger
+            // Position UFO lower and bigger
+            ufo.position.set(-200, -800, -300);
+            ufo.scale.set(8, 8, 8); // Much bigger
             ufo.rotation.y = Math.PI / 4;
             console.log('👽 UFO positioned at:', ufo.position);
 

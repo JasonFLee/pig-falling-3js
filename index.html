@@ -37,6 +37,7 @@
             background: #000;
             z-index: 9999;
             display: flex;
+            flex-direction: column;
             justify-content: center;
             align-items: center;
             opacity: 1;
@@ -60,6 +61,33 @@
                 0 0 40px rgba(74, 144, 226, 0.3),
                 0 0 60px rgba(74, 144, 226, 0.2);
             letter-spacing: 2px;
+            margin-bottom: 40px;
+        }
+
+        #start-button {
+            font-family: 'Arial', sans-serif;
+            font-size: 24px;
+            padding: 20px 50px;
+            background: rgba(74, 144, 226, 0.4);
+            backdrop-filter: blur(20px);
+            color: white;
+            border: 2px solid rgba(255, 255, 255, 0.6);
+            border-radius: 16px;
+            cursor: pointer;
+            opacity: 0;
+            animation: softFadeIn 2s ease-in-out 1s forwards;
+            transition: all 0.3s ease;
+            text-shadow: 0 0 10px rgba(0, 0, 0, 0.5);
+        }
+
+        #start-button:hover {
+            background: rgba(74, 144, 226, 0.6);
+            transform: scale(1.05);
+            box-shadow: 0 0 30px rgba(74, 144, 226, 0.5);
+        }
+
+        #start-button:active {
+            transform: scale(0.98);
         }
 
         @keyframes softFadeIn {
@@ -280,6 +308,7 @@
 <body>
     <div id="intro-screen">
         <div id="intro-text">Jason Lee - Welcome to my website :)</div>
+        <button id="start-button">Enter</button>
     </div>
 
     <div id="loading" style="display: none;">
@@ -300,48 +329,31 @@
 
     <div id="canvas-container"></div>
 
-    <div id="info-overlay">
-        <div id="info-netflix" class="info-item fade-item">
-            <strong>Technical Program Manager</strong><br>Netflix
-        </div>
-        <div id="info-amazon" class="info-item fade-item">
-            <strong>Robotics Engineer</strong><br>Amazon
-        </div>
-        <div id="info-dartmouth" class="info-item fade-item">
-            <strong>Dartmouth College</strong><br>Engineering Management<br><em>(Student Council President)</em>
-        </div>
-        <div id="info-mines" class="info-item fade-item">
-            <strong>Colorado School of Mines</strong><br>Computer Science
-        </div>
-    </div>
-
-    <div id="buttons-overlay">
-        <a id="btn-projects" href="https://jasonleeprojectpage.surge.sh/" target="_blank" class="link-button fade-item">View Projects</a>
-        <a id="btn-linkedin" href="https://www.linkedin.com/in/jason-lee-660690188/" target="_blank" class="link-button fade-item">LinkedIn Profile</a>
-        <a id="btn-documentary" href="https://www.youtube.com/watch?v=E4CKj5Ng6kM" target="_blank" class="link-button fade-item">Watch Documentary</a>
-    </div>
 
     <!-- Background Music -->
-    <audio id="background-music" autoplay loop>
+    <audio id="background-music" loop preload="auto">
         <source src="/Arm [aPg_C-RRqx4].mp3" type="audio/mpeg">
     </audio>
 
     <script type="module" src="/main.js"></script>
     <script>
-        // Start music and journey immediately
+        const audio = document.getElementById('background-music');
+        audio.volume = 0.5;
+
+        // Wait for user to click Enter button
         window.addEventListener('load', () => {
             const introScreen = document.getElementById('intro-screen');
-            const audio = document.getElementById('background-music');
-            audio.volume = 0.5;
+            const startButton = document.getElementById('start-button');
 
-            // Start music immediately
-            audio.play().catch(e => {
-                console.log('Autoplay blocked - will play on first interaction');
-                document.addEventListener('click', () => audio.play(), { once: true });
-            });
+            startButton.addEventListener('click', () => {
+                // Start music when button is clicked
+                audio.play().then(() => {
+                    console.log('🎵 Music started!');
+                }).catch(err => {
+                    console.log('⚠️ Could not start music:', err);
+                });
 
-            // Show intro for 2 seconds, then fade out
-            setTimeout(() => {
+                // Fade out intro screen immediately
                 introScreen.classList.add('fade-out');
 
                 // Start journey after fade
@@ -349,41 +361,11 @@
                     introScreen.remove();
                     window.dispatchEvent(new CustomEvent('journeyStart'));
 
-                    // Start descent immediately - no click needed
+                    // Start descent immediately
                     window.dispatchEvent(new CustomEvent('startDescent'));
-
-                    // Sync career info with music (5 second intervals)
-                    showCareerInfoTimeline();
                 }, 500);
-            }, 2000);
-        });
-
-        // Career info timeline synced with music (5 second intervals starting at 2s)
-        function showCareerInfoTimeline() {
-            const schedule = [
-                { id: 'info-netflix', time: 2000 },     // 2s
-                { id: 'info-amazon', time: 7000 },      // 7s (2 + 5)
-                { id: 'info-dartmouth', time: 12000 },  // 12s (7 + 5)
-                { id: 'info-mines', time: 17000 },      // 17s (12 + 5)
-                { id: 'btn-projects', time: 22000 },    // 22s (17 + 5)
-                { id: 'btn-linkedin', time: 27000 },    // 27s (22 + 5)
-                { id: 'btn-documentary', time: 32000 }  // 32s (27 + 5)
-            ];
-
-            // Show each item for exactly 3 seconds
-            schedule.forEach(item => {
-                setTimeout(() => {
-                    const element = document.getElementById(item.id);
-                    if (element) {
-                        element.classList.add('visible');
-                        // Hide after exactly 3 seconds
-                        setTimeout(() => {
-                            element.classList.remove('visible');
-                        }, 3000);
-                    }
-                }, item.time);
             });
-        }
+        });
 
         // Modal functions
         function closeModal() {
