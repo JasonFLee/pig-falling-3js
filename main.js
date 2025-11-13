@@ -762,8 +762,8 @@ function createUFO() {
                 }
             });
 
-            // Position UFO lower and bigger
-            ufo.position.set(-200, -800, -300);
+            // Position UFO much higher (but below moon) and bigger
+            ufo.position.set(-200, 400, -300);
             ufo.scale.set(8, 8, 8); // Much bigger
             ufo.rotation.y = Math.PI / 4;
             console.log('👽 UFO positioned at:', ufo.position);
@@ -2160,7 +2160,7 @@ function animate() {
 
 // Auto-descend - now starts automatically
 let isDescending = false;
-let descentSpeed = 0.00015; // 2x slower for better sync with music
+let descentSpeed = 0.0000675; // 100% slower (half of 0.000135)
 
 // Note: Auto-descent now starts automatically via 'startDescent' event
 // Click to pause/resume

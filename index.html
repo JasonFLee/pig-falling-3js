@@ -303,6 +303,74 @@
             0% { transform: rotate(0deg); }
             100% { transform: rotate(360deg); }
         }
+
+        /* Story overlay styles */
+        #story-overlay {
+            position: fixed;
+            bottom: 100px;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 90%;
+            max-width: 800px;
+            z-index: 100;
+            pointer-events: none;
+        }
+
+        .story-segment {
+            opacity: 0;
+            transition: opacity 1.5s ease-in-out;
+            text-align: center;
+        }
+
+        .story-segment.active {
+            opacity: 1;
+        }
+
+        .story-text {
+            font-family: 'Georgia', serif;
+            font-size: 20px;
+            line-height: 1.8;
+            color: white;
+            text-shadow:
+                0 0 30px rgba(0, 0, 0, 0.95),
+                0 0 60px rgba(0, 0, 0, 0.8),
+                2px 2px 8px rgba(0, 0, 0, 1);
+            margin-bottom: 25px;
+            padding: 0 20px;
+        }
+
+        .story-media {
+            display: inline-block;
+            margin: 15px 10px;
+            pointer-events: all;
+            max-width: 250px;
+            vertical-align: top;
+        }
+
+        .story-media-container {
+            text-align: center;
+            margin: 20px auto;
+        }
+
+        .story-media img {
+            width: 100%;
+            height: auto;
+            border: 4px solid white;
+            border-radius: 8px;
+            box-shadow:
+                0 6px 20px rgba(0, 0, 0, 0.6),
+                0 0 30px rgba(255, 255, 255, 0.3);
+        }
+
+        .story-media iframe {
+            width: 100%;
+            height: 140px;
+            border: 4px solid white;
+            border-radius: 8px;
+            box-shadow:
+                0 6px 20px rgba(0, 0, 0, 0.6),
+                0 0 30px rgba(255, 255, 255, 0.3);
+        }
     </style>
 </head>
 <body>
@@ -329,6 +397,8 @@
 
     <div id="canvas-container"></div>
 
+    <!-- Story Overlay -->
+    <div id="story-overlay"></div>
 
     <!-- Background Music -->
     <audio id="background-music" loop preload="auto">
@@ -339,6 +409,85 @@
     <script>
         const audio = document.getElementById('background-music');
         audio.volume = 0.5;
+
+        // Story segments - chunked for ~5 second reading time (~30-40 words each)
+        const storySegments = [
+            { text: '"The world is full of magic things, patiently waiting for our senses to grow sharper." — W.B. Yeats' },
+            { text: '4:32 pm, I\'m 12. I stand frozen in front of my peers. I\'m alone, on stage, in my underwear. Kids are pointing and laughing. What am I doing here?' },
+            { text: 'Magic. Oh yes! I wanted to be a magician… this was a trick where I would predict the colors of a spectator\'s drawing by taking off my clothes and revealing I knew how they\'d color it all along.', media: [{ type: 'image', src: '/photo 1.png' }, { type: 'video', src: 'https://www.youtube.com/embed/d0m1AUuOE1E' }] },
+            { text: 'But as I take off my pants, I take off both the covering pants and the predicted shorts, showing everyone my underwear. Kids laughing at me on stage. Oh no! This will probably be a core memory.' },
+            { text: 'Now I\'m 15- I wanted to be the best Minecraft Skywars player online. It didn\'t matter that I was one of the best in the world, but… I met a girl while doing it.' },
+            { text: 'She was also one of the best! We\'ve never talked in person- just hours in-game. And this may be the perfect opportunity! California. Universal Studios. She said we should meet at this one point,' },
+            { text: 'And I get there and see her and… walk away before she sees me. I didn\'t want the digital world to be anything but digital. This was real- real people- real emotions- real regret.' },
+            { text: 'A bit older now. I\'m in a pre-college program. I was never good with girls, I thought, but it seems like they like me because I\'m funny.' },
+            { text: 'I start to get obsessed with what else I can control. I start journaling, meditating, exercising, and sleeping. Habits for the future. A belief that improvements to yourself compound-' },
+            { text: 'It may take years, but little steps become miles shockingly fast. Soon I\'ll be the same Jason but unrecognizable in many ways.' },
+            { text: 'I drag a couch up a mountain with a friend. I\'m trying to enjoy what I have left until I become a full adult. I don\'t think my friends understand how much I love many of them.' },
+            { text: 'College now. I can be who I want. I can be popular. I can be athletic. Can I be taken? Asked a girl out with Carolina Reaper peppers.', media: [{ type: 'image', src: '/photo 2.webp' }] },
+            { text: 'I eat 3, trying to impress her. I barf and poop at the same time in front of her wide eyes. Can I be taken? Well, I asked her later if she wanted to be my girlfriend.' },
+            { text: 'Somehow, she said yes. She\'s wonderful. We go to France. We go to Korea. I get a pet octopus and keep it in a jar.', media: [{ type: 'image', src: '/photo 3.jpg' }] },
+            { text: 'I go to Thailand and get an arrow shaved into my head.', media: [{ type: 'image', src: '/photo 4.png' }] },
+            { text: 'I go to Nepal to become a monk and make a documentary.', media: [{ type: 'image', src: '/photo 5.jpg' }] },
+            { text: 'I go to Vietnam, point at a goat on the mountainside, and say, "That." I go to India on a sugar mama\'s invite. I come back. We, break up.' },
+            { text: 'It breaks me a bit more than I thought I could be. I fly to Japan and find refuge in ramen and pig cafés.', media: [{ type: 'image', src: '/photo 6.png' }] },
+            { text: 'Graduate school decisions. I went to Dartmouth during a tour where I slept in the library because I booked an Airbnb in "Dartmouth, Canada". Turns out I\'m now homeless.' },
+            { text: 'I get woken up by a security guard who asks if I\'m a student. "No. Not yet." Maybe a bit bold before admissions.' },
+            { text: 'I get into Harvard for policy. Which to choose? There\'s only one group smaller than the people who get in- the people who get in and reject them.' },
+            { text: 'I might regret this forever, but something feels special about Dartmouth engineering. I want to breathe the air of the birthplace of AI. I want to be in technology, not politics.' },
+            { text: 'I want to go to the trees.', media: [{ type: 'image', src: '/photo 7.png' }] },
+            { text: 'This was a hard year. FOMO for a life I could have had. Are adventures over now? But my plan pays off- in a world where the internet\'s interconnectedness siphons all the money to a few super companies,' },
+            { text: 'It\'s imperative to be helpful to them. They want people who can shift reality to their whims- engineering is the practical use of bending reality by working in accordance with its principles. And I love building.' },
+            { text: 'I am in charge of making an internal show at Netflix. Fun. When I worked in the Colorado Senate, I took great pride in getting higher-ups\' attention through skits.', media: [{ type: 'video', src: 'https://www.youtube.com/embed/byCef9e3IQk' }] },
+            { text: 'Ok, now what? Where to? Amazon robotics. Time to do my hair and wear awfully tight, heavy clothes. No more cussing- I\'ll rebuild my cuss shocker stopping machine-' },
+            { text: 'Problem is the first thing you want to do after you cuss is cuss again. I\'m older now, and the same uncomfortable feeling I have when I graduated elementary school' },
+            { text: 'Is the same one I have now when I graduate grad school- Just: "Huh. So that\'s over now. What comes next?"' },
+            { text: 'But who am I?? My creative friends see me as an engineer. My engineering friends see me as a creative. I see myself as dissatisfied. Doing it all, but too much motion blur to frame the shot.' },
+            { text: 'I\'m good at doing things but bad at being satisfied. Both, unfortunately for me, matter.' },
+            { text: 'Who knows what I\'ll become? Hopefully better. Hopefully, make great things that help people. Spend time and energy towards people I care about, as they\'re getting older for some reason, too.' },
+            { text: 'But that\'s as far as I can plan for a world nobody has lived in yet. And the weight of what could be is too large a thought.' },
+            { text: 'It\'s not that each choice doesn\'t lead to an incredibly different life path; it\'s that most are pretty ok. And now it\'s up to me to be ok with that.' }
+        ];
+
+        let storyTimers = [];
+        let currentSegmentIndex = 0;
+
+        function showStorySegment(segment) {
+            const overlay = document.getElementById('story-overlay');
+
+            // Create segment HTML
+            let html = '<div class="story-segment active"><div class="story-text">' + segment.text + '</div>';
+
+            // Add media if present - wrap in container for side-by-side layout
+            if (segment.media) {
+                html += '<div class="story-media-container">';
+                segment.media.forEach(media => {
+                    if (media.type === 'image') {
+                        html += '<div class="story-media"><img src="' + media.src + '" alt="Memory"></div>';
+                    } else if (media.type === 'video') {
+                        html += '<div class="story-media"><iframe src="' + media.src + '" frameborder="0" allow="autoplay; encrypted-media" allowfullscreen></iframe></div>';
+                    }
+                });
+                html += '</div>';
+            }
+
+            html += '</div>';
+            overlay.innerHTML = html;
+
+            // Fade out after 4.5 seconds (smoother transition right before next segment at 5s)
+            setTimeout(() => {
+                const segments = overlay.querySelectorAll('.story-segment');
+                segments.forEach(seg => seg.classList.remove('active'));
+            }, 4500);
+        }
+
+        function startStoryTimeline() {
+            storySegments.forEach((segment, index) => {
+                const timer = setTimeout(() => {
+                    showStorySegment(segment);
+                }, index * 5000);
+                storyTimers.push(timer);
+            });
+        }
 
         // Wait for user to click Enter button
         window.addEventListener('load', () => {
@@ -363,6 +512,9 @@
 
                     // Start descent immediately
                     window.dispatchEvent(new CustomEvent('startDescent'));
+
+                    // Start story timeline
+                    startStoryTimeline();
                 }, 500);
             });
         });
