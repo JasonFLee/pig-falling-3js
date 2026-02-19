@@ -7,13 +7,21 @@ import { GLTFLoader } from 'three/examples/jsm/loaders/GLTFLoader.js';
 import { EffectComposer, RenderPass, EffectPass, BloomEffect, DepthOfFieldEffect, VignetteEffect, NoiseEffect, SMAAEffect } from 'postprocessing';
 import { GUI } from 'lil-gui';
 
+// Mobile detection
+const isMobile = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent) || window.innerWidth < 768;
+
 // Scene setup
 const scene = new THREE.Scene();
-const camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 10000);
-const renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true });
+const camera = new THREE.PerspectiveCamera(isMobile ? 75 : 88, window.innerWidth / window.innerHeight, 0.1, 10000);
+const renderer = new THREE.WebGLRenderer({
+    antialias: true, // Always enable antialiasing - needed for mobile quality
+    alpha: true,
+    powerPreference: 'high-performance',
+    failIfMajorPerformanceCaveat: false
+});
 
 renderer.setSize(window.innerWidth, window.innerHeight);
-renderer.setPixelRatio(window.devicePixelRatio);
+renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2)); // Use device pixel ratio on mobile for sharp rendering
 renderer.toneMapping = THREE.ACESFilmicToneMapping;
 renderer.toneMappingExposure = 1.2;
 renderer.shadowMap.enabled = true;
@@ -256,7 +264,7 @@ function createBalloons() {
     balloonGroup.position.set(0, 3, 0.5); // At pig's head level, slightly forward
 
     const colors = [0xff1493, 0x00bfff, 0xffd700, 0xff4500, 0x00ff7f, 0xff69b4, 0x9370db, 0xff6347];
-    const bundlePoint = new THREE.Vector3(0, 3, 0); // Bundle point in local space
+    const bundlePoint = new THREE.Vector3(0, 4, 0); // Bundle point - where all strings meet
 
     for (let i = 0; i < 8; i++) {
         // Balloon (simplified for performance)
@@ -274,43 +282,49 @@ function createBalloons() {
         const balloon = new THREE.Mesh(balloonGeometry, balloonMaterial);
 
         const angle = (i / 8) * Math.PI * 2;
-        const radius = 1.5 + Math.random() * 0.5;
+        const radius = 1.2 + Math.random() * 0.3;
+        const balloonY = 8 + Math.random() * 1.5; // Balloon heights
         balloon.position.set(
             Math.cos(angle) * radius,
-            12 + Math.random() * 2, // High above the bundle point
+            balloonY,
             Math.sin(angle) * radius
         );
+        balloon.userData.isBalloon = true;
+        balloon.userData.baseY = balloonY; // Store initial Y for animation
 
-        // Balloon knot
+        // Balloon knot - at bottom of balloon
         const knotGeo = new THREE.SphereGeometry(0.08, 8, 8);
         const knotMat = new THREE.MeshStandardMaterial({ color: colors[i] });
         const knot = new THREE.Mesh(knotGeo, knotMat);
         knot.position.copy(balloon.position);
-        knot.position.y -= 0.6;
+        knot.position.y -= 0.6; // Just below balloon
+        knot.userData.isKnot = true;
+        knot.userData.balloon = balloon; // Direct reference to paired balloon
 
-        // Individual string from balloon to bundle point
+        // Individual string - starts at knot (bottom of balloon) so it looks naturally tied
+        const startPos = new THREE.Vector3(balloon.position.x, balloon.position.y - 0.55, balloon.position.z);
         const stringCurve = new THREE.CatmullRomCurve3([
-            new THREE.Vector3(balloon.position.x, balloon.position.y - 0.6, balloon.position.z),
-            new THREE.Vector3(balloon.position.x * 0.7, balloon.position.y - 3, balloon.position.z * 0.7),
-            new THREE.Vector3(balloon.position.x * 0.4, balloon.position.y - 6, balloon.position.z * 0.4),
+            startPos,
+            new THREE.Vector3(startPos.x * 0.75, startPos.y - (startPos.y - bundlePoint.y) * 0.3, startPos.z * 0.75),
+            new THREE.Vector3(startPos.x * 0.3, startPos.y - (startPos.y - bundlePoint.y) * 0.7, startPos.z * 0.3),
             bundlePoint
         ]);
-        const stringGeometry = new THREE.TubeGeometry(stringCurve, 20, 0.02, 8, false);
+        const stringGeometry = new THREE.TubeGeometry(stringCurve, 10, 0.08, 6, false);
         const stringMaterial = new THREE.MeshBasicMaterial({ color: 0xffffff });
         const string = new THREE.Mesh(stringGeometry, stringMaterial);
-        string.userData.originalCurve = stringCurve;
-        string.userData.balloonIndex = i;
+        string.userData.isString = true;
+        string.userData.balloon = balloon; // Direct reference to paired balloon
 
         balloonGroup.add(balloon, knot, string);
     }
 
-    // Main string from bundle point down to origin (pig's mouth)
+    // Main string from bundle point down to pig's mouth
     const mainStringCurve = new THREE.CatmullRomCurve3([
         bundlePoint,
-        new THREE.Vector3(0, 1.5, -0.2),
-        new THREE.Vector3(0, 0, -0.5) // Attach at origin (mouth position)
+        new THREE.Vector3(0, 2, 0),
+        new THREE.Vector3(0, 0, -0.3) // Attach at pig's mouth
     ]);
-    const mainStringGeometry = new THREE.TubeGeometry(mainStringCurve, 15, 0.04, 8, false);
+    const mainStringGeometry = new THREE.TubeGeometry(mainStringCurve, 10, 0.04, 6, false);
     const mainStringMaterial = new THREE.MeshBasicMaterial({ color: 0xffffff });
     const mainString = new THREE.Mesh(mainStringGeometry, mainStringMaterial);
     balloonGroup.add(mainString);
@@ -370,7 +384,11 @@ function createMoon() {
 // Create starfield with 8k texture - optimized for performance
 function createStars() {
     // Add 8k stars texture as background sphere (using preloaded texture)
-    const starSphereGeometry = new THREE.SphereGeometry(2500, 64, 64);
+    const starSphereGeometry = new THREE.SphereGeometry(2500, isMobile ? 48 : 256, isMobile ? 24 : 128);
+    if (starsTexturePreload) {
+        starsTexturePreload.anisotropy = renderer.capabilities.getMaxAnisotropy();
+        starsTexturePreload.needsUpdate = true;
+    }
     const starSphereMaterial = new THREE.MeshBasicMaterial({
         map: starsTexturePreload,
         side: THREE.BackSide,
@@ -378,12 +396,18 @@ function createStars() {
         opacity: 1
     });
     const starSphere = new THREE.Mesh(starSphereGeometry, starSphereMaterial);
+    // On mobile push seam way to the right so it's out of view
+    starSphere.rotation.y = isMobile ? Math.PI * 1.4 : Math.PI * 0.75;
     starSphere.userData.isStarSphere = true;
     scene.add(starSphere);
     particles.push(starSphere);
 
     // Add aerial cloud photo sphere for atmosphere
-    const aerialSphereGeometry = new THREE.SphereGeometry(2400, 64, 64);
+    const aerialSphereGeometry = new THREE.SphereGeometry(2400, isMobile ? 48 : 256, isMobile ? 24 : 128);
+    if (aerialCloudTexturePreload) {
+        aerialCloudTexturePreload.anisotropy = renderer.capabilities.getMaxAnisotropy();
+        aerialCloudTexturePreload.needsUpdate = true;
+    }
     const aerialSphereMaterial = new THREE.MeshBasicMaterial({
         map: aerialCloudTexturePreload,
         side: THREE.BackSide,
@@ -391,6 +415,8 @@ function createStars() {
         opacity: 0
     });
     const aerialSphere = new THREE.Mesh(aerialSphereGeometry, aerialSphereMaterial);
+    // On mobile push seam way to the right so it's out of view
+    aerialSphere.rotation.y = isMobile ? Math.PI * 1.4 : Math.PI * 0.75;
     aerialSphere.userData.isAerialSphere = true;
     scene.add(aerialSphere);
     particles.push(aerialSphere);
@@ -1021,8 +1047,9 @@ function loadCloudObj() {
 function createClouds() {
     const cloudGroup = new THREE.Group();
 
-    // Reduced from 40 to 25 for better performance
-    for (let i = 0; i < 25; i++) {
+    // Reduced cloud count - even less on mobile
+    const cloudCount = isMobile ? 10 : 25;
+    for (let i = 0; i < cloudCount; i++) {
         const cloud = new THREE.Group();
 
         // Reduced puff count for performance
@@ -1065,9 +1092,10 @@ function createClouds() {
     scene.add(cloudGroup);
     atmosphereLayers.push({ type: 'clouds', group: cloudGroup });
 
-    // Add ground-level clouds - reduced from 20 to 12
+    // Add ground-level clouds - reduced on mobile
     const groundClouds = new THREE.Group();
-    for (let i = 0; i < 12; i++) {
+    const groundCloudCount = isMobile ? 5 : 12;
+    for (let i = 0; i < groundCloudCount; i++) {
         const cloud = new THREE.Group();
 
         const puffCount = 4 + Math.floor(Math.random() * 2);
@@ -1639,7 +1667,7 @@ function init() {
     pig = createPig();
     pig.add(createBalloons());
     pig.position.y = 0;
-    pig.visible = false; // Hide pig until journey starts
+    pig.visible = true; // Show pig immediately so it's not black
     scene.add(pig);
 
     createSun();
@@ -1667,13 +1695,17 @@ function init() {
     camera.position.set(0, 0, 25);
     camera.lookAt(0, 0, 0);
 
-    // Hide loading screen
-    document.getElementById('loading').style.display = 'none';
+    // Hide loading screen (if it exists)
+    const loadingEl = document.getElementById('loading');
+    if (loadingEl) loadingEl.style.display = 'none';
+
+    // Signal that scene is ready
+    window.dispatchEvent(new CustomEvent('sceneReady'));
+    console.log('🎨 Scene ready!');
 
     // Listen for journey start event
     window.addEventListener('journeyStart', () => {
         journeyStarted = true;
-        pig.visible = true;
         // Music is already playing from HTML audio element
 
         // Create stars when journey starts (background only, not particles)
@@ -1686,6 +1718,20 @@ function init() {
         isDescending = true;
         console.log('🚀 Auto-descent started!');
     });
+
+    // Allow index.html to restore scrollProgress (for resume on back navigation)
+    window.addEventListener('restoreProgress', (e) => {
+        if (e.detail && typeof e.detail.scrollProgress === 'number') {
+            scrollProgress = e.detail.scrollProgress;
+        }
+    });
+
+    // Save scrollProgress to sessionStorage periodically for resume
+    setInterval(() => {
+        if (journeyStarted && scrollProgress > 0) {
+            sessionStorage.setItem('sp', scrollProgress.toFixed(5));
+        }
+    }, 1000);
 }
 
 // Update layer info - now handled by time-based timeline in index.html
@@ -1743,15 +1789,15 @@ function animate() {
         const isMoving = Math.abs(scrollProgress - lastScrollProgress) > 0.0001;
         lastScrollProgress = scrollProgress;
 
-        // Create atmospheric particles ONCE when pig first starts moving
-        if (isMoving && !pigLanded && !atmosphericParticlesCreated) {
+        // Create atmospheric particles ONCE when pig first starts moving (desktop only)
+        if (!isMobile && isMoving && !pigLanded && !atmosphericParticlesCreated) {
             createAtmosphericParticles();
             atmosphericParticlesCreated = true;
             console.log('✨ Pig is moving - atmospheric particles spawned!');
         }
 
-        // Create beautiful trail particles ONLY when pig is moving
-        if (isMoving && !pigLanded && Math.random() > 0.7) {
+        // Create beautiful trail particles ONLY when pig is moving (desktop only)
+        if (!isMobile && isMoving && !pigLanded && Math.random() > 0.7) {
             createTrailParticle(pig.position);
         }
 
@@ -1797,37 +1843,38 @@ function animate() {
         // Balloon animations - keep floating throughout
         pig.children.forEach((child, i) => {
             if (child.type === 'Group') { // Balloon group
-                let balloonIndex = 0;
                 child.children.forEach((meshOrObj, j) => {
-                    // Animate balloons
-                    if (meshOrObj.geometry && meshOrObj.geometry.type === 'SphereGeometry') {
-                        const baseY = 4 + (balloonIndex % 8) * 0.2;
-                        meshOrObj.position.y = baseY + Math.sin(time * 3 + j) * 0.5;
-                        meshOrObj.rotation.y += 0.01;
-                        balloonIndex++;
+                    // Animate balloons only (tagged with isBalloon)
+                    if (meshOrObj.userData.isBalloon) {
+                        meshOrObj.position.y = meshOrObj.userData.baseY + Math.sin(time * 1.5 + j) * 0.15;
+                        meshOrObj.rotation.y += 0.005;
                     }
 
-                    // Update string geometry to follow balloon
-                    if (meshOrObj.geometry && meshOrObj.geometry.type === 'TubeGeometry' && meshOrObj.userData.balloonIndex !== undefined) {
-                        const balloonIdx = meshOrObj.userData.balloonIndex;
-                        const correspondingBalloon = child.children.find((c, idx) =>
-                            c.geometry && c.geometry.type === 'SphereGeometry' && idx < j && Math.floor(idx / 3) === balloonIdx
-                        );
+                    // Knots follow their paired balloon exactly
+                    if (meshOrObj.userData.isKnot && meshOrObj.userData.balloon) {
+                        const bln = meshOrObj.userData.balloon;
+                        meshOrObj.position.x = bln.position.x;
+                        meshOrObj.position.y = bln.position.y - 0.6;
+                        meshOrObj.position.z = bln.position.z;
+                    }
 
-                        if (correspondingBalloon) {
-                            // Recreate string curve to follow balloon
-                            const angle = (balloonIdx / 8) * Math.PI * 2;
-                            const radius = 2 + 0.25;
-                            const stringCurve = new THREE.CatmullRomCurve3([
-                                new THREE.Vector3(correspondingBalloon.position.x, correspondingBalloon.position.y - 0.6, correspondingBalloon.position.z),
-                                new THREE.Vector3(correspondingBalloon.position.x * 0.8 + Math.sin(balloonIdx) * 0.3, correspondingBalloon.position.y - 1.5, correspondingBalloon.position.z * 0.8 + Math.cos(balloonIdx) * 0.3),
-                                new THREE.Vector3(correspondingBalloon.position.x * 0.5 + Math.sin(balloonIdx * 2) * 0.5, correspondingBalloon.position.y - 2.5, correspondingBalloon.position.z * 0.5 + Math.cos(balloonIdx * 2) * 0.5),
-                                new THREE.Vector3(Math.sin(balloonIdx * 3) * 0.3, correspondingBalloon.position.y - 3.5, Math.cos(balloonIdx * 3) * 0.3),
-                                new THREE.Vector3(0, 0.5, 0)
-                            ]);
-                            meshOrObj.geometry.dispose();
-                            meshOrObj.geometry = new THREE.TubeGeometry(stringCurve, 30, 0.03, 8, false);
-                        }
+                    // Strings go from knot (bottom of balloon) down to bundle point
+                    if (meshOrObj.userData.isString && meshOrObj.userData.balloon) {
+                        const bln = meshOrObj.userData.balloon;
+                        const startX = bln.position.x;
+                        const startY = bln.position.y - 0.55; // knot position - bottom of balloon
+                        const startZ = bln.position.z;
+                        const endX = 0, endY = 4, endZ = 0; // bundle point
+                        const mid1X = startX * 0.75, mid1Y = startY - (startY - endY) * 0.3, mid1Z = startZ * 0.75;
+                        const mid2X = startX * 0.3, mid2Y = startY - (startY - endY) * 0.7, mid2Z = startZ * 0.3;
+                        const stringCurve = new THREE.CatmullRomCurve3([
+                            new THREE.Vector3(startX, startY, startZ),
+                            new THREE.Vector3(mid1X, mid1Y, mid1Z),
+                            new THREE.Vector3(mid2X, mid2Y, mid2Z),
+                            new THREE.Vector3(endX, endY, endZ)
+                        ]);
+                        meshOrObj.geometry.dispose();
+                        meshOrObj.geometry = new THREE.TubeGeometry(stringCurve, 10, 0.08, 4, false);
                     }
                 });
             }
@@ -1846,13 +1893,14 @@ function animate() {
         cameraOffset = new THREE.Vector3(0, -1450, 100); // Pulled back and elevated overhead view
         lookAtTarget = new THREE.Vector3(0, -1600, 0); // Look at landing spot, tilted up to avoid horizon
     } else if (pigWalkingAway) {
-        // Camera pans out as pig floats back to space - NO LOCK, keep following
+        // Camera pans out as pig floats back to space - STOP zooming after 10 seconds
         const floatTime = time - landingTime - 0.1;
-        const panDistance = 100 + floatTime * 30; // Keep panning out continuously
-        const heightBoost = floatTime * 20; // Keep rising with pig
+        const cappedTime = Math.min(floatTime, 10); // Cap at 10 seconds for zoom
+        const panDistance = 100 + cappedTime * 30; // Stop zooming out after 10s
+        const heightBoost = cappedTime * 20; // Stop rising after 10s
 
         cameraOffset = new THREE.Vector3(0, pig.position.y + heightBoost, panDistance);
-        lookAtTarget = new THREE.Vector3(pig.position.x, pig.position.y, pig.position.z);
+        lookAtTarget = new THREE.Vector3(pig.position.x, pig.position.y, pig.position.z); // Keep tracking pig
     } else {
         // SPIRAL DESCENT - multiple rotations as you fall
         const spiralRotations = 3; // 3 full rotations during descent
@@ -1862,23 +1910,22 @@ function animate() {
         let spiralRadius;
         let heightOffset;
         if (scrollProgress < 0.75) {
-            spiralRadius = 30 + (1 - scrollProgress) * 20; // Normal distance
-            heightOffset = 15 - scrollProgress * 10; // Start above, get level/below
+            spiralRadius = 30 + (1 - scrollProgress) * 15; // Same for all devices - wider FOV handles "see more" on desktop
+            heightOffset = 5 - scrollProgress * 3;
         } else {
-            // Pan out significantly in last 25% AND tilt up (when blue atmosphere visible)
             const endProgress = (scrollProgress - 0.75) / 0.25;
-            spiralRadius = 40 + endProgress * 100; // Pan out to 140 units
-            heightOffset = 5 + endProgress * 120; // Tilt camera WAY up (raise height significantly)
+            spiralRadius = 35 + endProgress * 80;
+            heightOffset = 2 + endProgress * 60;
         }
 
         // Camera angle tilts to look down more as you descend (but less at the end)
         let lookAheadY;
         if (scrollProgress < 0.75) {
-            lookAheadY = pig.position.y - scrollProgress * 50; // Look further down as you fall
+            lookAheadY = pig.position.y - scrollProgress * 20; // Less look-down, keep pig centered
         } else {
             // At the end, look more level/up to avoid horizon and show earth from above
             const endProgress = (scrollProgress - 0.75) / 0.25;
-            lookAheadY = pig.position.y - 37.5 + endProgress * 80; // Tilt view way up
+            lookAheadY = pig.position.y - 15 + endProgress * 40; // Tilt view up but less extreme
         }
 
         cameraOffset = new THREE.Vector3(
@@ -1956,8 +2003,13 @@ function animate() {
 
     // Rotate and manage particles (stars and aerial sky)
     particles.forEach(p => {
-        p.rotation.y += 0.0003;
-        p.rotation.x += 0.0001;
+        // Sky spheres rotate faster on desktop so seam drifts through quickly
+        const skyRotSpeed = (p.userData.isStarSphere || p.userData.isAerialSphere) ? (isMobile ? 0.0003 : 0.0012) : 0.0003;
+        p.rotation.y += skyRotSpeed;
+        // Only add x rotation for particle stars, not the sky spheres (keeps seam hidden below)
+        if (!p.userData.isStarSphere && !p.userData.isAerialSphere) {
+            p.rotation.x += 0.0001;
+        }
 
         // Star sphere - only in space
         if (p.userData.isStarSphere) {
@@ -2160,22 +2212,15 @@ function animate() {
 
 // Auto-descend - now starts automatically
 let isDescending = false;
-let descentSpeed = 0.0000675; // 100% slower (half of 0.000135)
+const descentSpeedPerSecond = isMobile ? 0.001866 * 2.0 : 0.001866 * 2.85; // mobile ~198s to land, desktop ~140s to land
 
 // Note: Auto-descent now starts automatically via 'startDescent' event
-// Click to pause/resume
-window.addEventListener('click', (e) => {
-    if (!journeyStarted) return;
-    if (pigLanded) return;
+// Click-to-pause removed - descent always continues automatically
 
-    // Toggle descent on click
-    isDescending = !isDescending;
-    console.log(isDescending ? '▶️ Resumed' : '⏸️ Paused');
-});
-
-// Also allow scroll wheel for manual control
+// Allow scroll wheel for manual control (desktop only)
 let scrollVelocity = 0;
 window.addEventListener('wheel', (e) => {
+    if (isMobile) return; // Mobile doesn't use wheel
     if (!journeyStarted) return;
     if (pigLanded) return;
 
@@ -2186,10 +2231,16 @@ window.addEventListener('wheel', (e) => {
     scrollVelocity = Math.max(-0.01, Math.min(0.01, scrollVelocity));
 });
 
+let lastScrollTime = performance.now();
+
 function updateScroll() {
-    // Auto-descent when active
+    const now = performance.now();
+    const delta = Math.min((now - lastScrollTime) / 1000, 0.1); // delta in seconds, capped at 100ms to prevent jumps
+    lastScrollTime = now;
+
+    // Auto-descent when active - time-based so it works at any frame rate
     if (isDescending && !pigLanded) {
-        scrollProgress += descentSpeed;
+        scrollProgress += descentSpeedPerSecond * delta;
     }
 
     // Manual scroll

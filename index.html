@@ -2,8 +2,8 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Jason's Interactive Portfolio - A Pig's Journey</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Jason Lee</title>
     <style>
         @import url('https://fonts.googleapis.com/css2?family=Dancing+Script:wght@700&display=swap');
 
@@ -17,6 +17,7 @@
             font-family: 'Arial', sans-serif;
             overflow: hidden;
             background: #000;
+            -webkit-tap-highlight-color: transparent;
         }
 
         #canvas-container {
@@ -40,8 +41,7 @@
             flex-direction: column;
             justify-content: center;
             align-items: center;
-            opacity: 1;
-            transition: opacity 0.5s ease;
+            transition: opacity 0.6s ease;
         }
 
         #intro-screen.fade-out {
@@ -49,276 +49,72 @@
             pointer-events: none;
         }
 
-        #intro-text {
+        #welcome-text {
             font-family: 'Dancing Script', cursive;
-            font-size: 56px;
+            font-size: clamp(32px, 8vw, 56px);
             color: white;
             text-align: center;
-            opacity: 0;
-            animation: softFadeIn 2s ease-in-out forwards;
-            text-shadow:
-                0 0 20px rgba(255, 255, 255, 0.5),
-                0 0 40px rgba(74, 144, 226, 0.3),
-                0 0 60px rgba(74, 144, 226, 0.2);
-            letter-spacing: 2px;
             margin-bottom: 40px;
+            text-shadow: 0 0 20px rgba(255, 255, 255, 0.3);
+            padding: 0 20px;
         }
 
         #start-button {
-            font-family: 'Arial', sans-serif;
-            font-size: 24px;
-            padding: 20px 50px;
-            background: rgba(74, 144, 226, 0.4);
-            backdrop-filter: blur(20px);
+            font-size: clamp(16px, 4vw, 22px);
+            padding: 16px 40px;
+            background: rgba(255, 255, 255, 0.1);
             color: white;
-            border: 2px solid rgba(255, 255, 255, 0.6);
-            border-radius: 16px;
+            border: 2px solid rgba(255, 255, 255, 0.5);
+            border-radius: 12px;
             cursor: pointer;
-            opacity: 0;
-            animation: softFadeIn 2s ease-in-out 1s forwards;
-            transition: all 0.3s ease;
-            text-shadow: 0 0 10px rgba(0, 0, 0, 0.5);
+            transition: all 0.2s ease;
         }
 
         #start-button:hover {
-            background: rgba(74, 144, 226, 0.6);
-            transform: scale(1.05);
-            box-shadow: 0 0 30px rgba(74, 144, 226, 0.5);
-        }
-
-        #start-button:active {
-            transform: scale(0.98);
-        }
-
-        @keyframes softFadeIn {
-            0% { opacity: 0; }
-            100% { opacity: 1; }
-        }
-
-        #info-overlay {
-            position: fixed;
-            left: 20px;
-            top: 50%;
-            transform: translateY(-50%);
-            color: white;
-            font-size: 18px;
-            z-index: 50;
-            max-width: 300px;
-            text-shadow: 0 0 10px rgba(0, 0, 0, 0.8);
-        }
-
-        .info-item {
-            margin: 20px 0;
-            padding: 20px;
-            background: rgba(255, 255, 255, 0.1);
-            backdrop-filter: blur(20px) saturate(180%);
-            -webkit-backdrop-filter: blur(20px) saturate(180%);
-            border: 1px solid rgba(255, 255, 255, 0.3);
-            border-radius: 16px;
-            box-shadow:
-                0 8px 32px rgba(0, 0, 0, 0.3),
-                inset 0 0 0 1px rgba(255, 255, 255, 0.1);
-            transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
-            transform: translateX(0);
-        }
-
-        .info-item:hover {
-            background: rgba(255, 255, 255, 0.15);
-            transform: translateX(5px) scale(1.02);
-            box-shadow:
-                0 12px 48px rgba(0, 0, 0, 0.4),
-                inset 0 0 0 1px rgba(255, 255, 255, 0.2);
-        }
-
-        #buttons-overlay {
-            position: fixed;
-            right: 20px;
-            top: 50%;
-            transform: translateY(-50%);
-            z-index: 50;
-        }
-
-        .link-button {
-            display: block;
-            margin: 15px 0;
-            padding: 16px 32px;
-            background: rgba(74, 144, 226, 0.3);
-            backdrop-filter: blur(20px) saturate(180%);
-            -webkit-backdrop-filter: blur(20px) saturate(180%);
-            color: white;
-            text-decoration: none;
-            border-radius: 14px;
-            font-weight: bold;
-            font-size: 15px;
-            text-align: center;
-            border: 2px solid rgba(255, 255, 255, 0.4);
-            transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
-            box-shadow:
-                0 8px 32px rgba(74, 144, 226, 0.3),
-                inset 0 0 0 1px rgba(255, 255, 255, 0.1);
-            position: relative;
-            overflow: hidden;
-        }
-
-        .link-button::before {
-            content: '';
-            position: absolute;
-            top: 50%;
-            left: 50%;
-            width: 0;
-            height: 0;
-            border-radius: 50%;
             background: rgba(255, 255, 255, 0.2);
-            transform: translate(-50%, -50%);
-            transition: width 0.6s, height 0.6s;
         }
 
-        .link-button:hover::before {
-            width: 300px;
-            height: 300px;
+        #start-button:disabled {
+            opacity: 0.7;
         }
 
-        .link-button:hover {
-            background: rgba(74, 144, 226, 0.5);
-            transform: translateY(-3px) scale(1.05);
-            box-shadow:
-                0 12px 48px rgba(74, 144, 226, 0.5),
-                inset 0 0 0 1px rgba(255, 255, 255, 0.2);
-            border-color: rgba(255, 255, 255, 0.6);
+        #volume-hint {
+            margin-top: 25px;
+            font-size: clamp(12px, 3vw, 14px);
+            color: rgba(255, 255, 255, 0.6);
         }
 
-        .link-button:active {
-            transform: translateY(-1px) scale(1.02);
-        }
-
-        .fade-item {
-            opacity: 0;
-            transition: opacity 1s ease-in-out;
-        }
-
-        .fade-item.visible {
-            opacity: 1;
-        }
-
-
-
-
-        /* Modal for Resumes/Projects/Essays */
-        #modal {
-            position: fixed;
-            top: 0;
-            left: 0;
-            width: 100vw;
-            height: 100vh;
-            background: rgba(0, 0, 0, 0.9);
-            z-index: 2000;
-            display: none;
-            justify-content: center;
-            align-items: center;
-            opacity: 0;
-            transition: opacity 0.3s ease;
-        }
-
-        #modal.active {
-            display: flex;
-            opacity: 1;
-        }
-
-        .modal-content {
-            background: white;
-            padding: 40px;
-            border-radius: 20px;
-            max-width: 800px;
-            max-height: 80vh;
-            overflow-y: auto;
-            position: relative;
-        }
-
-        .modal-close {
-            position: absolute;
-            top: 20px;
-            right: 20px;
-            font-size: 30px;
-            cursor: pointer;
-            color: #666;
-            background: none;
-            border: none;
-        }
-
-        .modal-close:hover {
-            color: #000;
-        }
-
-        .modal-items {
-            display: flex;
-            flex-direction: column;
-            gap: 20px;
-        }
-
-        .modal-item {
-            padding: 20px;
-            background: #f5f5f5;
-            border-radius: 10px;
-            cursor: pointer;
-            transition: all 0.3s ease;
-        }
-
-        .modal-item:hover {
-            background: #e0e0e0;
-            transform: translateX(10px);
-        }
-
-        .modal-item h3 {
-            margin-bottom: 10px;
-            color: #667eea;
-        }
-
-        @keyframes pulse {
-            0%, 100% { opacity: 1; transform: translateX(-50%) translateY(0); }
-            50% { opacity: 0.5; transform: translateX(-50%) translateY(5px); }
-        }
-
-        #loading {
-            position: fixed;
-            top: 50%;
-            left: 50%;
-            transform: translate(-50%, -50%);
-            color: white;
-            font-size: 24px;
-            z-index: 200;
-            text-align: center;
-        }
-
-        .loading-spinner {
-            border: 4px solid rgba(255, 255, 255, 0.3);
-            border-top: 4px solid white;
+        #start-button.loading::after {
+            content: '';
+            display: inline-block;
+            width: 14px;
+            height: 14px;
+            margin-left: 8px;
+            border: 2px solid rgba(255,255,255,0.3);
+            border-top-color: white;
             border-radius: 50%;
-            width: 50px;
-            height: 50px;
-            animation: spin 1s linear infinite;
-            margin: 20px auto;
+            animation: spin 0.8s linear infinite;
+            vertical-align: middle;
         }
 
         @keyframes spin {
-            0% { transform: rotate(0deg); }
-            100% { transform: rotate(360deg); }
+            to { transform: rotate(360deg); }
         }
 
-        /* Story overlay styles */
         #story-overlay {
             position: fixed;
-            bottom: 100px;
+            bottom: 50px;
             left: 50%;
             transform: translateX(-50%);
-            width: 90%;
-            max-width: 800px;
+            width: 94%;
+            max-width: 720px;
             z-index: 100;
             pointer-events: none;
         }
 
         .story-segment {
             opacity: 0;
-            transition: opacity 1.5s ease-in-out;
+            transition: opacity 0.6s ease-in-out;
             text-align: center;
         }
 
@@ -327,247 +123,392 @@
         }
 
         .story-text {
-            font-family: 'Georgia', serif;
-            font-size: 20px;
-            line-height: 1.8;
+            font-family: Georgia, serif;
+            font-size: clamp(12px, 2.8vw, 17px);
+            line-height: 1.55;
             color: white;
-            text-shadow:
-                0 0 30px rgba(0, 0, 0, 0.95),
-                0 0 60px rgba(0, 0, 0, 0.8),
-                2px 2px 8px rgba(0, 0, 0, 1);
-            margin-bottom: 25px;
-            padding: 0 20px;
-        }
-
-        .story-media {
-            display: inline-block;
-            margin: 15px 10px;
-            pointer-events: all;
-            max-width: 250px;
-            vertical-align: top;
+            text-shadow: 0 2px 15px rgba(0,0,0,0.95), 0 0 30px rgba(0,0,0,0.9);
+            margin-bottom: 12px;
+            padding: 0 8px;
         }
 
         .story-media-container {
             text-align: center;
-            margin: 20px auto;
+            margin: 10px auto;
+        }
+
+        .story-media {
+            display: inline-block;
+            margin: 4px;
+            pointer-events: all;
+            max-width: 110px;
         }
 
         .story-media img {
             width: 100%;
-            height: auto;
-            border: 4px solid white;
-            border-radius: 8px;
-            box-shadow:
-                0 6px 20px rgba(0, 0, 0, 0.6),
-                0 0 30px rgba(255, 255, 255, 0.3);
+            max-height: 80px;
+            object-fit: cover;
+            border: 2px solid white;
+            border-radius: 4px;
+        }
+
+        .story-media.wide {
+            max-width: 90%;
+            width: 440px;
+        }
+
+        .story-media.wide img {
+            max-height: 320px;
+            object-fit: contain;
         }
 
         .story-media iframe {
-            width: 100%;
-            height: 140px;
-            border: 4px solid white;
-            border-radius: 8px;
-            box-shadow:
-                0 6px 20px rgba(0, 0, 0, 0.6),
-                0 0 30px rgba(255, 255, 255, 0.3);
+            width: 140px;
+            height: 90px;
+            border: 2px solid white;
+            border-radius: 4px;
+        }
+
+        @media (max-width: 500px) {
+            #welcome-text {
+                font-size: 28px;
+                margin-bottom: 30px;
+            }
+            #start-button {
+                font-size: 16px;
+                padding: 14px 32px;
+            }
+            #story-overlay {
+                bottom: 25px;
+            }
+            .story-text {
+                font-size: 11px;
+                line-height: 1.45;
+            }
+            .story-media {
+                max-width: 80px;
+            }
+            .story-media img {
+                max-height: 60px;
+            }
+            .story-media iframe {
+                height: 50px;
+            }
         }
     </style>
 </head>
 <body>
     <div id="intro-screen">
-        <div id="intro-text">Jason Lee - Welcome to my website :)</div>
+        <div id="welcome-text">Jason Lee - Welcome to my website :)</div>
         <button id="start-button">Enter</button>
-    </div>
-
-    <div id="loading" style="display: none;">
-        <div class="loading-spinner"></div>
-        <p>Loading your interactive portfolio...</p>
-    </div>
-
-
-
-
-    <!-- Modal for content -->
-    <div id="modal">
-        <div class="modal-content">
-            <button class="modal-close" onclick="closeModal()">&times;</button>
-            <div id="modal-body"></div>
-        </div>
+        <div id="volume-hint">🔊 Turn on volume for the best experience</div>
     </div>
 
     <div id="canvas-container"></div>
-
-    <!-- Story Overlay -->
     <div id="story-overlay"></div>
 
-    <!-- Background Music -->
     <audio id="background-music" loop preload="auto">
         <source src="/Arm [aPg_C-RRqx4].mp3" type="audio/mpeg">
     </audio>
 
+    <audio id="narration-audio" preload="auto">
+        <source src="/yay.mp3" type="audio/mpeg">
+    </audio>
+
     <script type="module" src="/main.js"></script>
     <script>
+        // Keep screen awake on mobile while site is open
+        let wakeLock = null;
+        async function requestWakeLock() {
+            try {
+                if ('wakeLock' in navigator) {
+                    if (wakeLock) { try { wakeLock.release(); } catch(e) {} }
+                    wakeLock = await navigator.wakeLock.request('screen');
+                }
+            } catch(e) {}
+        }
+        // Re-acquire when tab becomes visible again (lock releases when tab hides)
+        document.addEventListener('visibilitychange', () => {
+            if (document.visibilityState === 'visible') requestWakeLock();
+        });
+        // Re-acquire when page is restored from back-forward cache
+        window.addEventListener('pageshow', (e) => {
+            if (e.persisted) {
+                requestWakeLock();
+                // Resume narration if it was playing
+                if (narration && narration.paused && !narration.ended && narration.currentTime > 0) {
+                    narration.play().catch(() => {});
+                }
+                if (audio && audio.paused) {
+                    audio.play().catch(() => {});
+                }
+            }
+        });
+        requestWakeLock();
+    </script>
+    <script>
         const audio = document.getElementById('background-music');
-        audio.volume = 0.5;
+        const narration = document.getElementById('narration-audio');
 
-        // Story segments - chunked for ~5 second reading time (~30-40 words each)
+        // Mobile detection for volume adjustment
+        const isMobile = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent) || window.innerWidth < 768;
+        audio.volume = isMobile ? 1.0 : 0.12; // Will be controlled by GainNode on mobile
+        audio.muted = false;
+        narration.volume = 1.0; // Full volume narration always
+
+        // Route BOTH audio elements through a shared AudioContext on mobile
+        // so iOS doesn't silence one when the other plays
+        let sharedAudioCtx = null;
+        function setupMobileAudio() {
+            if (!isMobile) return;
+            try {
+                sharedAudioCtx = new (window.AudioContext || window.webkitAudioContext)();
+
+                // Music: quiet background
+                const musicSource = sharedAudioCtx.createMediaElementSource(audio);
+                const musicGain = sharedAudioCtx.createGain();
+                musicGain.gain.value = 0.06; // quiet background music
+                musicSource.connect(musicGain);
+                musicGain.connect(sharedAudioCtx.destination);
+
+                // Narration: clear but not blasting
+                const narrationSource = sharedAudioCtx.createMediaElementSource(narration);
+                const narrationGain = sharedAudioCtx.createGain();
+                narrationGain.gain.value = 0.5; // half volume voice
+                narrationSource.connect(narrationGain);
+                narrationGain.connect(sharedAudioCtx.destination);
+
+                if (sharedAudioCtx.state === 'suspended') sharedAudioCtx.resume();
+            } catch(e) {
+                console.log('Web Audio API setup failed:', e);
+                audio.volume = 0.12;
+                narration.volume = 1.0;
+            }
+        }
+
+        // Preload audio as soon as page loads
+        let audioReady = false;
+        let narrationReady = false;
+
+        audio.addEventListener('canplaythrough', () => { audioReady = true; });
+        narration.addEventListener('canplaythrough', () => { narrationReady = true; });
+
+        // Force load
+        audio.load();
+        narration.load();
+
+        // EXACT timestamps from Whisper JSON transcription - CORRECTED
         const storySegments = [
-            { text: '"The world is full of magic things, patiently waiting for our senses to grow sharper." — W.B. Yeats' },
-            { text: '4:32 pm, I\'m 12. I stand frozen in front of my peers. I\'m alone, on stage, in my underwear. Kids are pointing and laughing. What am I doing here?' },
-            { text: 'Magic. Oh yes! I wanted to be a magician… this was a trick where I would predict the colors of a spectator\'s drawing by taking off my clothes and revealing I knew how they\'d color it all along.', media: [{ type: 'image', src: '/photo 1.png' }, { type: 'video', src: 'https://www.youtube.com/embed/d0m1AUuOE1E' }] },
-            { text: 'But as I take off my pants, I take off both the covering pants and the predicted shorts, showing everyone my underwear. Kids laughing at me on stage. Oh no! This will probably be a core memory.' },
-            { text: 'Now I\'m 15- I wanted to be the best Minecraft Skywars player online. It didn\'t matter that I was one of the best in the world, but… I met a girl while doing it.' },
-            { text: 'She was also one of the best! We\'ve never talked in person- just hours in-game. And this may be the perfect opportunity! California. Universal Studios. She said we should meet at this one point,' },
-            { text: 'And I get there and see her and… walk away before she sees me. I didn\'t want the digital world to be anything but digital. This was real- real people- real emotions- real regret.' },
-            { text: 'A bit older now. I\'m in a pre-college program. I was never good with girls, I thought, but it seems like they like me because I\'m funny.' },
-            { text: 'I start to get obsessed with what else I can control. I start journaling, meditating, exercising, and sleeping. Habits for the future. A belief that improvements to yourself compound-' },
-            { text: 'It may take years, but little steps become miles shockingly fast. Soon I\'ll be the same Jason but unrecognizable in many ways.' },
-            { text: 'I drag a couch up a mountain with a friend. I\'m trying to enjoy what I have left until I become a full adult. I don\'t think my friends understand how much I love many of them.' },
-            { text: 'College now. I can be who I want. I can be popular. I can be athletic. Can I be taken? Asked a girl out with Carolina Reaper peppers.', media: [{ type: 'image', src: '/photo 2.webp' }] },
-            { text: 'I eat 3, trying to impress her. I barf and poop at the same time in front of her wide eyes. Can I be taken? Well, I asked her later if she wanted to be my girlfriend.' },
-            { text: 'Somehow, she said yes. She\'s wonderful. We go to France. We go to Korea. I get a pet octopus and keep it in a jar.', media: [{ type: 'image', src: '/photo 3.jpg' }] },
-            { text: 'I go to Thailand and get an arrow shaved into my head.', media: [{ type: 'image', src: '/photo 4.png' }] },
-            { text: 'I go to Nepal to become a monk and make a documentary.', media: [{ type: 'image', src: '/photo 5.jpg' }] },
-            { text: 'I go to Vietnam, point at a goat on the mountainside, and say, "That." I go to India on a sugar mama\'s invite. I come back. We, break up.' },
-            { text: 'It breaks me a bit more than I thought I could be. I fly to Japan and find refuge in ramen and pig cafés.', media: [{ type: 'image', src: '/photo 6.png' }] },
-            { text: 'Graduate school decisions. I went to Dartmouth during a tour where I slept in the library because I booked an Airbnb in "Dartmouth, Canada". Turns out I\'m now homeless.' },
-            { text: 'I get woken up by a security guard who asks if I\'m a student. "No. Not yet." Maybe a bit bold before admissions.' },
-            { text: 'I get into Harvard for policy. Which to choose? There\'s only one group smaller than the people who get in- the people who get in and reject them.' },
-            { text: 'I might regret this forever, but something feels special about Dartmouth engineering. I want to breathe the air of the birthplace of AI. I want to be in technology, not politics.' },
-            { text: 'I want to go to the trees.', media: [{ type: 'image', src: '/photo 7.png' }] },
-            { text: 'This was a hard year. FOMO for a life I could have had. Are adventures over now? But my plan pays off- in a world where the internet\'s interconnectedness siphons all the money to a few super companies,' },
-            { text: 'It\'s imperative to be helpful to them. They want people who can shift reality to their whims- engineering is the practical use of bending reality by working in accordance with its principles. And I love building.' },
-            { text: 'I am in charge of making an internal show at Netflix. Fun. When I worked in the Colorado Senate, I took great pride in getting higher-ups\' attention through skits.', media: [{ type: 'video', src: 'https://www.youtube.com/embed/byCef9e3IQk' }] },
-            { text: 'Ok, now what? Where to? Amazon robotics. Time to do my hair and wear awfully tight, heavy clothes. No more cussing- I\'ll rebuild my cuss shocker stopping machine-' },
-            { text: 'Problem is the first thing you want to do after you cuss is cuss again. I\'m older now, and the same uncomfortable feeling I have when I graduated elementary school' },
-            { text: 'Is the same one I have now when I graduate grad school- Just: "Huh. So that\'s over now. What comes next?"' },
-            { text: 'But who am I?? My creative friends see me as an engineer. My engineering friends see me as a creative. I see myself as dissatisfied. Doing it all, but too much motion blur to frame the shot.' },
-            { text: 'I\'m good at doing things but bad at being satisfied. Both, unfortunately for me, matter.' },
-            { text: 'Who knows what I\'ll become? Hopefully better. Hopefully, make great things that help people. Spend time and energy towards people I care about, as they\'re getting older for some reason, too.' },
-            { text: 'But that\'s as far as I can plan for a world nobody has lived in yet. And the weight of what could be is too large a thought.' },
-            { text: 'It\'s not that each choice doesn\'t lead to an incredibly different life path; it\'s that most are pretty ok. And now it\'s up to me to be ok with that.' }
+            // 0.0 - 7.36
+            { time: 0.0, text: "7th grade. I stand frozen in front of my peers. I'm alone on stage in my underwear. Kids are pointing and laughing." },
+            // 7.36 - 12.76
+            { time: 7.36, text: "What am I doing here? Magic. Oh yes, I wanted to be a magician.", media: [{ type: 'image', src: '/photo 1.png' }, { type: 'video', src: 'https://www.youtube.com/embed/d0m1AUuOE1E' }] },
+            // 12.76 - 21.72
+            { time: 12.76, text: "This was a trick where I would predict the color of a spectator's drawing by taking off my clothes and revealing I knew their color all along by the clothes underneath.", media: [{ type: 'image', src: '/magic-trick.png', wide: true }] },
+            // 21.72 - 26.68
+            { time: 21.72, text: "But as I take off my pants, I take off both covering pants and the predicted shorts, showing everyone my underwear.", media: [{ type: 'image', src: '/magic-trick.png', wide: true }] },
+            // 26.68 - 32.84
+            { time: 26.68, text: "Kids are laughing at me on stage. Oh no, next experience." },
+            // 32.84 - 38.28
+            { time: 32.84, text: "Now I'm 15. I wanted to be the best Minecraft Skywars player online, and I met a girl while doing it." },
+            // 38.28 - 44.52
+            { time: 38.28, text: "We never talk in person, just hours in game. And this might be the perfect opportunity." },
+            // 44.52 - 55.44
+            { time: 44.52, text: "California, Universal Studios. She said we should meet at one point and I get there and see her and walk away before she sees me." },
+            // 55.44 - 62.72
+            { time: 55.44, text: "I didn't want the digital world to be anything but digital. This was real. Real people, real emotions, real regret. I must keep going." },
+            // 62.72 - 72.88
+            { time: 62.72, text: "A bit older now. I'm in a pre-college program. I was never good with girls I thought, but maybe they could like me if I'm funny. I start to get obsessed with what else I can control." },
+            // 72.88 - 83.28
+            { time: 72.88, text: "I drag a couch up a mountain with a friend. I'm trying to enjoy what I have left until I become a full adult. I don't think my friends understand how much I love many of them." },
+            // 83.36 - 89.12 (College - Carolina Reapers - photo 2 here)
+            { time: 83.36, text: "College now. I can be who I want. I can be popular. I can be athletic. Maybe I can be taken. I ask a girl out with Carolina Reapers.", media: [{ type: 'image', src: '/photo 2.webp' }] },
+            // 89.12 - 94.56 (I eat three and vomit)
+            { time: 89.12, text: "I eat three trying to impress her and then I vomit in front of her wide eyes." },
+            // 94.56 - 101.52 (Dating, France, Korea)
+            { time: 94.56, text: "Can I be taken? Well, I ask her later if she wants to date. Somehow she said yes. We go to France. We go to Korea." },
+            // 101.52 - 106.64 (Octopus - photo 3 HERE)
+            { time: 101.52, text: "I get a pet octopus and keep it in a jar.", media: [{ type: 'image', src: '/photo 3.jpg' }] },
+            // 106.64 - 111.92 (Thailand - photo 4)
+            { time: 106.64, text: "I go to Thailand and get an arrow shaved into my head.", media: [{ type: 'image', src: '/photo 4.png' }] },
+            // 111.92 - 112.16 (Nepal - photo 5) - This is said at end of segment 19
+            { time: 109.5, text: "I go to Nepal to become a monk and make a documentary.", media: [{ type: 'image', src: '/photo 5.jpg' }] },
+            // 112.16 - 116.88 (Vietnam)
+            { time: 112.16, text: "I go to Vietnam, point out a goat at a mountainside and say, that I want to eat that at a restaurant." },
+            // 117.6 - 124.0 (Break up)
+            { time: 117.6, text: "I come back. We break up. It breaks me a bit more than I thought I could be broken." },
+            // 124.0 - 129.44 (Japan pig cafes - photo 6)
+            { time: 124.0, text: "I don't really know what to do next other than to keep running. I fly to Japan and find refuge in ramen and pig cafes.", media: [{ type: 'image', src: '/photo 6.png' }] },
+            // 129.44 - 135.36 (Cuddle)
+            { time: 129.44, text: "Although clearly intelligent, all they wanted to do was cuddle." },
+            // 135.36 - 140.56 (Pigs fly)
+            { time: 135.36, text: "What if pigs can fly but they have no reason to prove it and instead obey gravity?" },
+            // 140.56 - 146.0 (Chase impossible)
+            { time: 140.56, text: "If I chase the impossible, what am I trying to prove? What am I trying to escape?" },
+            // 146.0 - 156.48 (Dartmouth Canada - combined for longer display)
+            { time: 146.0, text: "Graduate school decisions. I went to Dartmouth during a tour where I slept in the library because I booked the Airbnb in Dartmouth, Canada (the city). Turns out I'm now homeless." },
+            // 156.48 - 163.12 (Security guard)
+            { time: 156.48, text: "I get woken up by a security guard who asks if I'm a student. I say no, not yet." },
+            // 163.12 - 173.04 (Harvard/Dartmouth - photo 7)
+            { time: 163.12, text: "I get into Harvard for Policy and Dartmouth for Engineering. Which to choose? I might regret this forever but something feels special about going where AI was invented. Something feels special about engineering.", media: [{ type: 'image', src: '/photo 7.png' }] },
+            // 173.04 - 179.12 (FOMO)
+            { time: 173.04, text: "For a little while I experienced FOMO but not for an event but rather a life I could have lived." },
+            // 179.12 - 182.32 (Regret reality)
+            { time: 179.12, text: "Did I make the right decision? Can I regret a reality I don't know?" },
+            // 182.32 - 191.32 (Regret unknown + long journey - combined for longer display)
+            { time: 182.32, text: "Regret of the unknown is tricky and upon graduating, I figure there's a long journey ahead and I don't want to carry anything extra along the way." },
+            // 191.32 - 198.08 (Life keeps going)
+            { time: 191.32, text: "Life just keeps going. Friends do crazy things, friends get rich, famous, some get married, people I know of all ages die." },
+            // 198.08 - 203.92 (Elementary school feeling)
+            { time: 198.08, text: "Each moment just goes by and the same uncomfortable feeling you have when you graduate elementary school is the same one you have when a friend gets married." },
+            // 203.92 - 214.24 (Just huh + scared) - split properly
+            { time: 203.92, text: "Just, huh, guess that just happened. I'm really scared of that feeling many years from now when there isn't a next thing to look forward to." },
+            // 214.24 - 234.56 (Combined: truth/standing/chase/avoid - all one long segment)
+            { time: 214.24, text: "The truth is I don't feel any less exposed now than I did in front of middle school peers in my underwear. I'm still standing bare waiting for the laughter to pass so I can move on. I chase the next accolade so I can move on. I embark on the next adventure so I can move on. I do anything to avoid the vulnerable feeling of facing the present." },
+            // 234.56 - 249.34 (But if then - surprising - extended longer)
+            { time: 234.56, text: "But if then, for only a second, I open my awareness to the full intensity of the moment, the screams, the laughter, the sting of embarrassment and the rush of fear, I think I would find something surprising." },
+            // 249.34 - 255.18 (Traumatic invitation)
+            { time: 249.34, text: "That something so traumatic was actually an invitation to fully experience the intensity of the present moment." },
+            // 255.18 - 260.5 (Nothing to run from - shortened)
+            { time: 255.18, text: "There, there was nothing to run from and there still isn't." },
+            // 260.5 - end (Full capacity)
+            { time: 260.5, text: "A life with love and laughter and adventures isn't enough. I must be present for the full capacity of experience and there's so much to experience still." }
         ];
 
-        let storyTimers = [];
-        let currentSegmentIndex = 0;
+        let lastShownIndex = -1;
 
-        function showStorySegment(segment) {
+        function showSegment(seg, dur) {
             const overlay = document.getElementById('story-overlay');
-
-            // Create segment HTML
-            let html = '<div class="story-segment active"><div class="story-text">' + segment.text + '</div>';
-
-            // Add media if present - wrap in container for side-by-side layout
-            if (segment.media) {
+            let html = '<div class="story-segment active"><div class="story-text">' + seg.text + '</div>';
+            if (seg.media) {
                 html += '<div class="story-media-container">';
-                segment.media.forEach(media => {
-                    if (media.type === 'image') {
-                        html += '<div class="story-media"><img src="' + media.src + '" alt="Memory"></div>';
-                    } else if (media.type === 'video') {
-                        html += '<div class="story-media"><iframe src="' + media.src + '" frameborder="0" allow="autoplay; encrypted-media" allowfullscreen></iframe></div>';
+                seg.media.forEach(m => {
+                    if (m.type === 'image') {
+                        const cls = m.wide ? 'story-media wide' : 'story-media';
+                        html += '<div class="' + cls + '"><img src="' + m.src + '" alt=""></div>';
+                    } else {
+                        html += '<div class="story-media"><iframe src="' + m.src + '" frameborder="0" allowfullscreen></iframe></div>';
                     }
                 });
                 html += '</div>';
             }
-
             html += '</div>';
             overlay.innerHTML = html;
 
-            // Fade out after 4.5 seconds (smoother transition right before next segment at 5s)
             setTimeout(() => {
-                const segments = overlay.querySelectorAll('.story-segment');
-                segments.forEach(seg => seg.classList.remove('active'));
-            }, 4500);
+                const s = overlay.querySelector('.story-segment');
+                if (s) s.classList.remove('active');
+            }, Math.max(dur - 400, 300));
         }
 
-        function startStoryTimeline() {
-            storySegments.forEach((segment, index) => {
-                const timer = setTimeout(() => {
-                    showStorySegment(segment);
-                }, index * 5000);
-                storyTimers.push(timer);
-            });
-        }
-
-        // Wait for user to click Enter button
-        window.addEventListener('load', () => {
-            const introScreen = document.getElementById('intro-screen');
-            const startButton = document.getElementById('start-button');
-
-            startButton.addEventListener('click', () => {
-                // Start music when button is clicked
-                audio.play().then(() => {
-                    console.log('🎵 Music started!');
-                }).catch(err => {
-                    console.log('⚠️ Could not start music:', err);
-                });
-
-                // Fade out intro screen immediately
-                introScreen.classList.add('fade-out');
-
-                // Start journey after fade
+        function startStory() {
+            // Restore saved narration time if user is returning to the page
+            const savedNarrationTime = parseFloat(sessionStorage.getItem('nt') || '0');
+            const savedScrollProgress = parseFloat(sessionStorage.getItem('sp') || '0');
+            if (savedNarrationTime > 5) {
+                narration.currentTime = savedNarrationTime;
+                // Restore pig position in main.js
                 setTimeout(() => {
-                    introScreen.remove();
-                    window.dispatchEvent(new CustomEvent('journeyStart'));
+                    window.dispatchEvent(new CustomEvent('restoreProgress', { detail: { scrollProgress: savedScrollProgress } }));
+                }, 200);
+            }
 
-                    // Start descent immediately
-                    window.dispatchEvent(new CustomEvent('startDescent'));
+            narration.play().catch(e => console.log('Narration:', e));
 
-                    // Start story timeline
-                    startStoryTimeline();
-                }, 500);
-            });
+            // Save narration time periodically for resume
+            setInterval(() => {
+                if (!narration.paused && !narration.ended && narration.currentTime > 0) {
+                    sessionStorage.setItem('nt', narration.currentTime.toFixed(2));
+                }
+            }, 1000);
+
+            function sync() {
+                const t = narration.currentTime;
+                for (let i = storySegments.length - 1; i >= 0; i--) {
+                    if (t >= storySegments[i].time) {
+                        if (i !== lastShownIndex) {
+                            lastShownIndex = i;
+                            const next = storySegments[i + 1];
+                            const dur = next ? (next.time - storySegments[i].time) * 1000 : 10000;
+                            showSegment(storySegments[i], dur);
+                        }
+                        break;
+                    }
+                }
+                if (!narration.ended) requestAnimationFrame(sync);
+                else {
+                    // Clear saved state when narration finishes
+                    sessionStorage.removeItem('nt');
+                    sessionStorage.removeItem('sp');
+                }
+            }
+            sync();
+        }
+
+        document.getElementById('start-button').addEventListener('click', async function() {
+            const btn = this;
+            const intro = document.getElementById('intro-screen');
+            const hint = document.getElementById('volume-hint');
+
+            btn.textContent = 'Loading';
+            btn.classList.add('loading');
+            btn.disabled = true;
+            if (hint) hint.style.display = 'none';
+
+            // Set up Web Audio for mobile (must be inside user gesture for iOS)
+            setupMobileAudio();
+
+            // Re-request wake lock inside user gesture (more reliable on iOS Safari)
+            requestWakeLock();
+
+            // Start BOTH audio files immediately on user click (required for mobile)
+            // This unlocks audio playback on iOS/Android
+            try {
+                await Promise.all([
+                    audio.play(),
+                    narration.play()
+                ]);
+            } catch(e) {
+                console.log('Audio start:', e);
+            }
+
+            // Pause narration, reset to start - will play when story starts
+            narration.pause();
+            narration.currentTime = 0;
+
+            // Wait for scene to signal it's ready, or timeout after 2s
+            let sceneReady = false;
+            const readyHandler = () => { sceneReady = true; };
+            window.addEventListener('sceneReady', readyHandler);
+
+            // Check if scene is already rendered
+            const checkReady = () => {
+                return new Promise(resolve => {
+                    const check = () => {
+                        if (sceneReady || document.querySelector('#canvas-container canvas')) {
+                            resolve();
+                        } else {
+                            setTimeout(check, 50);
+                        }
+                    };
+                    check();
+                    // Max wait 2 seconds
+                    setTimeout(resolve, 2000);
+                });
+            };
+
+            await checkReady();
+
+            // Now fade out and start
+            intro.classList.add('fade-out');
+
+            setTimeout(() => {
+                intro.remove();
+                window.dispatchEvent(new CustomEvent('journeyStart'));
+                window.dispatchEvent(new CustomEvent('startDescent'));
+                startStory();
+            }, 500);
         });
-
-        // Modal functions
-        function closeModal() {
-            document.getElementById('modal').classList.remove('active');
-        }
-
-        function showResumes() {
-            const modalBody = document.getElementById('modal-body');
-            modalBody.innerHTML = `
-                <h2>My Resumes</h2>
-                <div class="modal-items">
-                    <div class="modal-item">
-                        <h3>Software Engineer Resume</h3>
-                        <p>Full-stack development experience with modern web technologies...</p>
-                    </div>
-                    <div class="modal-item">
-                        <h3>Creative Resume</h3>
-                        <p>Design and creative projects showcasing artistic abilities...</p>
-                    </div>
-                    <div class="modal-item">
-                        <h3>Academic Resume</h3>
-                        <p>Educational background and research experience...</p>
-                    </div>
-                </div>
-            `;
-            document.getElementById('modal').classList.add('active');
-        }
-
-        function showProjects() {
-            const modalBody = document.getElementById('modal-body');
-            modalBody.innerHTML = `
-                <h2>My Projects</h2>
-                <div class="modal-items">
-                    <div class="modal-item">
-                        <h3>Project Alpha</h3>
-                        <p>An innovative web application using Three.js and modern frameworks...</p>
-                    </div>
-                    <div class="modal-item">
-                        <h3>Project Beta</h3>
-                        <p>Mobile-first responsive design with cutting-edge features...</p>
-                    </div>
-                    <div class="modal-item">
-                        <h3>Project Gamma</h3>
-                        <p>Full-stack application with real-time data processing...</p>
-                    </div>
-                </div>
-            `;
-            document.getElementById('modal').classList.add('active');
-        }
-
     </script>
 </body>
 </html>
