@@ -351,28 +351,32 @@
             { time: 156.48, text: "I get woken up by a security guard who asks if I'm a student. I say no, not yet." },
             // 163.12 - 173.04 (Harvard/Dartmouth - photo 7)
             { time: 163.12, text: "I get into Harvard for Policy and Dartmouth for Engineering. Which to choose? I might regret this forever but something feels special about going where AI was invented. Something feels special about engineering.", media: [{ type: 'image', src: '/photo 7.png' }] },
-            // 173.04 - 179.12 (FOMO)
+            // 173.04 - 179 (FOMO)
             { time: 173.04, text: "For a little while I experienced FOMO but not for an event but rather a life I could have lived." },
-            // 179.12 - 182.32 (Regret reality)
+            // 179 - 182.32 (Regret reality)
             { time: 179.12, text: "Did I make the right decision? Can I regret a reality I don't know?" },
-            // 182.32 - 191.32 (Regret unknown + long journey - combined for longer display)
+            // 182.32 - 194 (Regret unknown + long journey)
             { time: 182.32, text: "Regret of the unknown is tricky and upon graduating, I figure there's a long journey ahead and I don't want to carry anything extra along the way." },
-            // 191.32 - 198.08 (Life keeps going)
-            { time: 191.32, text: "Life just keeps going. Friends do crazy things, friends get rich, famous, some get married, people I know of all ages die." },
-            // 198.08 - 203.92 (Elementary school feeling)
-            { time: 198.08, text: "Each moment just goes by and the same uncomfortable feeling you have when you graduate elementary school is the same one you have when a friend gets married." },
-            // 203.92 - 214.24 (Just huh + scared) - split properly
-            { time: 203.92, text: "Just, huh, guess that just happened. I'm really scared of that feeling many years from now when there isn't a next thing to look forward to." },
-            // 214.24 - 234.56 (Combined: truth/standing/chase/avoid - all one long segment)
-            { time: 214.24, text: "The truth is I don't feel any less exposed now than I did in front of middle school peers in my underwear. I'm still standing bare waiting for the laughter to pass so I can move on. I chase the next accolade so I can move on. I embark on the next adventure so I can move on. I do anything to avoid the vulnerable feeling of facing the present." },
-            // 234.56 - 249.34 (But if then - surprising - extended longer)
-            { time: 234.56, text: "But if then, for only a second, I open my awareness to the full intensity of the moment, the screams, the laughter, the sting of embarrassment and the rush of fear, I think I would find something surprising." },
-            // 249.34 - 255.18 (Traumatic invitation)
-            { time: 249.34, text: "That something so traumatic was actually an invitation to fully experience the intensity of the present moment." },
-            // 255.18 - 260.5 (Nothing to run from - shortened)
-            { time: 255.18, text: "There, there was nothing to run from and there still isn't." },
-            // 260.5 - end (Full capacity)
-            { time: 260.5, text: "A life with love and laughter and adventures isn't enough. I must be present for the full capacity of experience and there's so much to experience still." }
+            // 193 - 201 (Life keeps going — speech resumes at 193.36s after 1.55s pause)
+            { time: 193, text: "Life just keeps going. Friends do crazy things, friends get rich, famous, some get married, people I know of all ages die." },
+            // 201 - 208 (Elementary school feeling — speech at 201.38s)
+            { time: 201, text: "Each moment just goes by and the same uncomfortable feeling you have when you graduate elementary school is the same one you have when a friend gets married." },
+            // 208 - 212 (Just huh — said ~208-211s, before the notable 1.02s pause)
+            { time: 208, text: "Just, huh, guess that just happened." },
+            // 212 - 218 (Scared — speech at 212.36s, after the 1.02s pause)
+            { time: 212, text: "I'm really scared of that feeling many years from now when there isn't a next thing to look forward to." },
+            // 218 - 228 (Truth/exposed/bare — speech at 217.99s, 10s display window)
+            { time: 218, text: "The truth is I don't feel any less exposed now than I did in front of middle school peers in my underwear. I'm still standing bare waiting for the laughter to pass so I can move on." },
+            // 228 - 237 (Chase/embark/avoid — speech ~228s, 9s display window)
+            { time: 228, text: "I chase the next accolade so I can move on. I embark on the next adventure so I can move on. I do anything to avoid the vulnerable feeling of facing the present." },
+            // 237 - 248 (But if then... "and the rush of fear" at 4:05=245s — speech at 237.43s)
+            { time: 237, text: "But if then, for only a second, I open my awareness to the full intensity of the moment, the screams, the laughter, the sting of embarrassment and the rush of fear, I think I would find something surprising." },
+            // 248 - 255 (That something so traumatic — 4:08=248s)
+            { time: 248, text: "That something so traumatic was actually an invitation to fully experience the intensity of the present moment." },
+            // 255 - 259 (Nothing to run from — 4:15=255s)
+            { time: 255, text: "There, there was nothing to run from and there still isn't." },
+            // 259 - end (A life with love — 4:19=259s; "there's so much to experience still" at 4:26=266s)
+            { time: 259, text: "A life with love and laughter and adventures isn't enough. I must be present for the full capacity of experience and there's so much to experience still." }
         ];
 
         let lastShownIndex = -1;
@@ -399,6 +403,64 @@
                 const s = overlay.querySelector('.story-segment');
                 if (s) s.classList.remove('active');
             }, Math.max(dur - 400, 300));
+        }
+
+        function triggerEndingSequence() {
+            // Clear subtitle
+            document.getElementById('story-overlay').innerHTML = '';
+
+            // Build overlay
+            const endDiv = document.createElement('div');
+            endDiv.style.cssText = 'position:fixed;top:0;left:0;width:100%;height:100%;z-index:9999;pointer-events:none;';
+
+            // Static canvas — 6s fade in
+            const staticCanvas = document.createElement('canvas');
+            staticCanvas.style.cssText = 'position:absolute;top:0;left:0;width:100%;height:100%;image-rendering:pixelated;opacity:0;transition:opacity 6s linear;';
+            staticCanvas.width = 320;
+            staticCanvas.height = 180;
+            endDiv.appendChild(staticCanvas);
+
+            // Black overlay
+            const blackDiv = document.createElement('div');
+            blackDiv.style.cssText = 'position:absolute;top:0;left:0;width:100%;height:100%;background:#000;opacity:0;transition:opacity 2.5s ease-in;';
+            endDiv.appendChild(blackDiv);
+
+            // Thank you text
+            const thankDiv = document.createElement('div');
+            thankDiv.style.cssText = 'position:absolute;top:0;left:0;width:100%;height:100%;display:flex;align-items:center;justify-content:center;opacity:0;transition:opacity 3s ease-in;';
+            thankDiv.innerHTML = '<p style="color:white;font-family:Georgia,serif;font-size:1.5em;text-align:center;padding:2em;line-height:1.8;letter-spacing:0.03em;">Thank you for being a part of my story :)</p>';
+            endDiv.appendChild(thankDiv);
+
+            document.body.appendChild(endDiv);
+
+            const ctx = staticCanvas.getContext('2d');
+            let animFrame;
+            function drawStatic() {
+                const img = ctx.createImageData(staticCanvas.width, staticCanvas.height);
+                for (let i = 0; i < img.data.length; i += 4) {
+                    const v = Math.random() * 255 | 0;
+                    img.data[i] = v; img.data[i+1] = v; img.data[i+2] = v; img.data[i+3] = 255;
+                }
+                ctx.putImageData(img, 0, 0);
+                animFrame = requestAnimationFrame(drawStatic);
+            }
+
+            // Start drawing static — music keeps looping forever, no fade, no stop
+            drawStatic();
+
+            // Begin slow static fade-in (10s CSS transition)
+            setTimeout(() => { staticCanvas.style.opacity = '1'; }, 100);
+
+            // After 6s: stop static, fade to black over 2.5s
+            setTimeout(() => {
+                cancelAnimationFrame(animFrame);
+                blackDiv.style.opacity = '1';
+
+                // After black settles (2.5s), show thank you text
+                setTimeout(() => {
+                    thankDiv.style.opacity = '1';
+                }, 2500);
+            }, 6500);
         }
 
         function startStory() {
@@ -437,9 +499,10 @@
                 }
                 if (!narration.ended) requestAnimationFrame(sync);
                 else {
-                    // Clear saved state when narration finishes
                     sessionStorage.removeItem('nt');
                     sessionStorage.removeItem('sp');
+                    // Let it fly for 5 seconds, then trigger ending
+                    setTimeout(triggerEndingSequence, 5000);
                 }
             }
             sync();
