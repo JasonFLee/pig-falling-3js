@@ -297,72 +297,57 @@
         audio.load();
         narration.load();
 
-        // Timestamps from Whisper ASR transcription of narration.m4a (exact second-level sync)
+        // Timestamps from Whisper word-level ASR (exact sync)
         const storySegments = [
-            // 0.0s - magic trick
-            { time: 0,     text: "Seventh grade. I stand frozen in front of my peers. I'm alone on stage in my underwear. Kids are pointing and laughing." },
-            { time: 6.4,   text: "What am I doing here? Magic! Oh yes, I wanted to be a magician.",
+            { time: 0,      text: "Seventh grade. I stand frozen in front of my peers. I'm alone on stage in my underwear." },
+            { time: 6.22,   text: "Kids are pointing and laughing. What am I doing here? Magic! Oh yes, I wanted to be a magician.",
               media: [{ type: 'image', src: '/photo 1.png' }, { type: 'video', src: 'https://www.youtube.com/embed/d0m1AUuOE1E' }] },
-            { time: 11.8,  text: "This was a trick where I would predict the colors of a spectator's drawing by taking off my clothes and revealing I knew how they'd color it all along.",
+            { time: 11.84,  text: "This was a trick where I would predict the colors of a spectator's drawing by taking off my clothes and revealing I knew how they'd color it all along.",
               media: [{ type: 'image', src: '/magic-trick.png', wide: true }] },
-            { time: 21.9,  text: "But as I tug off my pants, I take off both the covering pants and the predicted shorts, showing everyone my underwear." },
-
-            // 27.2s - Minecraft girl
-            { time: 27.2,  text: "Kids are laughing at me on stage. Oh no. Next experience." },
-            { time: 30.5,  text: "Now I'm 15. I met a girl while playing Minecraft. We never talked in person, just hours in game." },
-            { time: 34.5,  text: "And this might be the perfect opportunity. California Universal Studios." },
-            { time: 40.0,  text: "She said we should meet at one point. I get there. I see her. And I walk away before she sees me." },
-
-            // 45.4s - reflection / pre-college
-            { time: 45.4,  text: "I didn't want the digital world to be anything but digital. This was real. Real people, real emotions, real regret." },
-            { time: 52.2,  text: "A bit older now, I'm in a pre-college program. I was never good with girls, I thought, but it seems like they might like me if I'm funny." },
-            { time: 59.5,  text: "I start to get obsessed with what else I can control. I start journaling, meditating, exercising, sleeping. Habits for the future." },
-            { time: 69.5,  text: "Maybe someday I'll be different, but maybe recognizable." },
-
-            // 75.6s - college / Carolina Reapers
-            { time: 75.6,  text: "College now. I can be who I want. I can be popular. I can be athletic. Can I be taken?" },
-            { time: 81.8,  text: "I ask a girl out with Carolina Reaper peppers. I eat three trying to impress her.",
+            { time: 20.02,  text: "But as I tug off my pants, I take off both the covering pants and the predicted shorts, showing everyone my underwear." },
+            { time: 27.18,  text: "Kids are laughing at me on stage. Oh no." },
+            { time: 31.44,  text: "Next experience. Now I'm 15. I met a girl while playing Minecraft." },
+            { time: 36.44,  text: "We never talked in person, just hours in game. And this might be the perfect opportunity." },
+            { time: 41.48,  text: "California, Universal Studios. She said we should meet at one point and I get there and I see her and I walk away before she sees me." },
+            { time: 50.14,  text: "I didn't want the digital world to be anything but digital. This was real. Real people, real emotions, real regret." },
+            { time: 58.44,  text: "A bit older now. I'm in a pre-college program. I was never good with girls, I thought, but it seems like they might like me if I'm funny." },
+            { time: 65.66,  text: "I start to get obsessed with what else I can control. I start journaling, meditating, exercise, and sleeping. Habits for the future." },
+            { time: 73.54,  text: "Maybe someday I'll be different, but maybe recognizable." },
+            { time: 77.76,  text: "College now. I can be who I want. I can be popular. I can be athletic." },
+            { time: 84.40,  text: "Can I be taken? I ask a girl out with Carolina Reaper peppers. I eat three trying to impress her.",
               media: [{ type: 'image', src: '/photo 2.webp' }] },
-            { time: 89.5,  text: "I vomit in front of her wide eyes. Can I be taken? Well, I ask her later if she wants to be my girlfriend and somehow she says yes." },
-
-            // 95.5s - travels
-            { time: 95.5,  text: "We leave the country to see the world. We go to France, we go to Korea." },
-            { time: 102.0, text: "I get a pet octopus and keep it in a jar.",
+            { time: 89.52,  text: "I vomit in front of her wide eyes. Can I be taken? Well, I ask her later if she wants to be my girlfriend and somehow she says yes." },
+            { time: 98.86,  text: "We leave the country to see the world. We go to France, we go to Korea." },
+            { time: 103.14, text: "I get a pet octopus and keep it in a jar.",
               media: [{ type: 'image', src: '/photo 3.jpg' }] },
-            { time: 104.5, text: "I go to Thailand and get an arrow shaved into my head.",
+            { time: 105.62, text: "I go to Thailand and get an arrow shaved into my head.",
               media: [{ type: 'image', src: '/photo 4.png' }] },
-            { time: 107.0, text: "I go to Nepal to become a monk and make a documentary.",
+            { time: 108.54, text: "I go to Nepal to become a monk and make a documentary.",
               media: [{ type: 'image', src: '/photo 5.jpg' }] },
-            { time: 112.0, text: "And we break up." },
-
-            // 114.3s - Japan / pigs
-            { time: 114.3, text: "It breaks me a little bit more than I thought I could be broken." },
-            { time: 119.1, text: "I fly to Japan and find refuge in ramen and pig cafes.",
+            { time: 112.06, text: "And we break up." },
+            { time: 114.26, text: "It breaks me a little bit more than I thought I could be broken." },
+            { time: 117.56, text: "I fly to Japan and find refuge in ramen and pig cafes.",
               media: [{ type: 'image', src: '/photo 6.png' }] },
-            { time: 124.5, text: "What if pigs can fly, but they have no reason to prove it and instead obey gravity?" },
-            { time: 129.5, text: "If I chase the impossible, what am I trying to escape?" },
-
-            // 131.7s - grad school / Harvard
-            { time: 131.7, text: "Graduate school decisions. I went to Dartmouth during a tour where I slept in the library because I booked an Airbnb in Dartmouth, Canada. Turns out I'm now homeless." },
-            { time: 141.6, text: "I get woken up by a security guard who asks if I'm a student. No, not yet, I say.",
+            { time: 121.18, text: "What if pigs can fly, but they have no reason to prove it and instead obey gravity?" },
+            { time: 126.04, text: "If I chase the impossible, what am I trying to escape?" },
+            { time: 129.64, text: "Graduate school decisions." },
+            { time: 131.66, text: "I went to Dartmouth during a tour where I slept in the library because I booked an Airbnb in Dartmouth, Canada. Turns out I'm now homeless." },
+            { time: 139.46, text: "I get woken up by a security guard who asks if I'm a student. No, not yet, I say." },
+            { time: 145.42, text: "I get into Harvard for policy and Dartmouth for engineering. Which to choose?",
               media: [{ type: 'image', src: '/photo 7.png' }] },
-            { time: 145.5, text: "I get into Harvard for policy and Dartmouth for engineering. Which to choose? I might regret this forever, but something feels special about where AI was invented." },
-            { time: 153.0, text: "Something feels special about engineering. For a little while, I experienced FOMO, but not for an event, but rather for a life I could have lived." },
-            { time: 158.4, text: "Did I make the right decision? Can I regret a reality I don't know?" },
-
-            // 162.6s - life keeps going
-            { time: 162.6, text: "Life just keeps going. Friends do crazy things, friends get rich, famous, friends get married. People I know of all ages die." },
-            { time: 170.1, text: "Each moment just goes by, and the same uncomfortable feeling you have when you graduate from elementary school is the same one you have when a friend gets married." },
-            { time: 180.9, text: "Just, huh, guess that just happened." },
-            { time: 183.5, text: "I'm really scared of that feeling many years from now when there isn't the next thing to look forward to." },
-
-            // 193.5s - in the meantime
-            { time: 193.5, text: "In the meantime, I desperately feel the moments, trying to push out any vulnerability I'd encounter by just sitting with the present." },
-            { time: 199.1, text: "I don't feel any less exposed now than I did in front of my middle school peers in my underwear." },
-            { time: 204.3, text: "I'm still standing bare, waiting for the laughter to pass so I can move on." },
-            { time: 210.1, text: "I chase the next accolade so I can move on. I embark in the next adventure so I can move on." },
-            { time: 214.6, text: "In seventh grade, I wanted so badly to exit the stage, but I couldn't then." },
-            { time: 220.5, text: "And I still haven't now." }
+            { time: 149.36, text: "I might regret this forever, but something feels special about where AI was invented." },
+            { time: 153.74, text: "Something feels special about engineering. For a little while, I experienced FOMO, but not for an event, but rather for a life I could have lived." },
+            { time: 161.48, text: "Did I make the right decision? Can I regret a reality I don't know?" },
+            { time: 166.76, text: "Life just keeps going. Friends do crazy things, friends get rich, famous, friends get married. People I know of all ages die." },
+            { time: 174.76, text: "Each moment just goes by, and the same uncomfortable feeling you have when you graduate from elementary school is the same one you have when a friend gets married." },
+            { time: 183.40, text: "Just, huh, guess that just happened." },
+            { time: 186.82, text: "I'm really scared of that feeling many years from now when there isn't the next thing to look forward to." },
+            { time: 193.54, text: "In the meantime, I desperately feel the moments, trying to push out any vulnerability I'd encounter by just sitting with the present." },
+            { time: 201.38, text: "I don't feel any less exposed now than I did in front of my middle school peers in my underwear." },
+            { time: 206.82, text: "I'm still standing bare, waiting for the laughter to pass so I can move on." },
+            { time: 210.98, text: "I chase the next accolade so I can move on. I embark in the next adventure so I can move on." },
+            { time: 215.74, text: "In seventh grade, I wanted so badly to exit the stage, but I couldn't then." },
+            { time: 222.02, text: "And I still haven't now." }
         ];
 
         let lastShownIndex = -1;
