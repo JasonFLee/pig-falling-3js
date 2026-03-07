@@ -382,6 +382,36 @@ function createMoon() {
 }
 
 // Create starfield with 8k texture - optimized for performance
+function makeSeamlessTexture(srcTexture) {
+    const img = srcTexture && srcTexture.image;
+    if (!img || !img.width) return srcTexture;
+    const blendPx = Math.floor(img.width * 0.04); // blend 4% on each edge
+    const canvas = document.createElement('canvas');
+    canvas.width = img.width;
+    canvas.height = img.height;
+    const ctx = canvas.getContext('2d');
+    ctx.drawImage(img, 0, 0);
+    const leftData  = ctx.getImageData(0, 0, blendPx, img.height);
+    const rightData = ctx.getImageData(img.width - blendPx, 0, blendPx, img.height);
+    for (let x = 0; x < blendPx; x++) {
+        const t = x / blendPx; // 0 at seam edge, 1 away from seam
+        for (let y = 0; y < img.height; y++) {
+            const i = (y * blendPx + x) * 4;
+            for (let c = 0; c < 3; c++) {
+                const lv = leftData.data[i + c];
+                const rv = rightData.data[i + c];
+                leftData.data[i + c]  = Math.round(lv * t + rv * (1 - t));
+                rightData.data[i + c] = Math.round(rv * t + lv * (1 - t));
+            }
+        }
+    }
+    ctx.putImageData(leftData, 0, 0);
+    ctx.putImageData(rightData, img.width - blendPx, 0);
+    const tex = new THREE.CanvasTexture(canvas);
+    tex.anisotropy = renderer.capabilities.getMaxAnisotropy();
+    return tex;
+}
+
 function createStars() {
     // Add 8k stars texture as background sphere (using preloaded texture)
     const starSphereGeometry = new THREE.SphereGeometry(2500, isMobile ? 48 : 256, isMobile ? 24 : 128);
@@ -404,12 +434,9 @@ function createStars() {
 
     // Add aerial cloud photo sphere for atmosphere
     const aerialSphereGeometry = new THREE.SphereGeometry(2400, isMobile ? 48 : 256, isMobile ? 24 : 128);
-    if (aerialCloudTexturePreload) {
-        aerialCloudTexturePreload.anisotropy = renderer.capabilities.getMaxAnisotropy();
-        aerialCloudTexturePreload.needsUpdate = true;
-    }
+    const seamlessAerialTexture = makeSeamlessTexture(aerialCloudTexturePreload);
     const aerialSphereMaterial = new THREE.MeshBasicMaterial({
-        map: aerialCloudTexturePreload,
+        map: seamlessAerialTexture || aerialCloudTexturePreload,
         side: THREE.BackSide,
         transparent: true,
         opacity: 0
@@ -2217,19 +2244,8 @@ const descentSpeedPerSecond = 0.003461; // land at ~213.7s (10s before 223.7s au
 // Note: Auto-descent now starts automatically via 'startDescent' event
 // Click-to-pause removed - descent always continues automatically
 
-// Allow scroll wheel for manual control (desktop only)
+// Scroll wheel does not control descent speed - auto-descent only
 let scrollVelocity = 0;
-window.addEventListener('wheel', (e) => {
-    if (isMobile) return; // Mobile doesn't use wheel
-    if (!journeyStarted) return;
-    if (pigLanded) return;
-
-    // Manual scroll pauses auto-descent
-    isDescending = false;
-
-    scrollVelocity += e.deltaY * 0.00002; // Slower scroll wheel speed
-    scrollVelocity = Math.max(-0.01, Math.min(0.01, scrollVelocity));
-});
 
 let lastScrollTime = performance.now();
 
