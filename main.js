@@ -21,7 +21,7 @@ const renderer = new THREE.WebGLRenderer({
 });
 
 renderer.setSize(window.innerWidth, window.innerHeight);
-renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2)); // Use device pixel ratio on mobile for sharp rendering
+renderer.setPixelRatio(isMobile ? 1 : Math.min(window.devicePixelRatio, 2)); // Cap at 1 on mobile to avoid GPU overload
 renderer.toneMapping = THREE.ACESFilmicToneMapping;
 renderer.toneMappingExposure = 1.2;
 renderer.shadowMap.enabled = true;
@@ -396,8 +396,8 @@ function createStars() {
         opacity: 1
     });
     const starSphere = new THREE.Mesh(starSphereGeometry, starSphereMaterial);
-    // On mobile push seam way to the right so it's out of view
-    starSphere.rotation.y = isMobile ? Math.PI * 1.4 : Math.PI * 0.75;
+    // Seam at +Z (behind camera during final descent toward house)
+    starSphere.rotation.y = Math.PI * 1.5;
     starSphere.userData.isStarSphere = true;
     scene.add(starSphere);
     particles.push(starSphere);
@@ -415,8 +415,8 @@ function createStars() {
         opacity: 0
     });
     const aerialSphere = new THREE.Mesh(aerialSphereGeometry, aerialSphereMaterial);
-    // On mobile push seam way to the right so it's out of view
-    aerialSphere.rotation.y = isMobile ? Math.PI * 1.4 : Math.PI * 0.75;
+    // Seam at +Z (behind camera during final descent toward house)
+    aerialSphere.rotation.y = Math.PI * 1.5;
     aerialSphere.userData.isAerialSphere = true;
     scene.add(aerialSphere);
     particles.push(aerialSphere);
@@ -1643,9 +1643,9 @@ function setupLighting() {
 
     const sunLight = new THREE.DirectionalLight(0xffd700, 2.5);
     sunLight.position.set(200, 300, 200);
-    sunLight.castShadow = true;
-    sunLight.shadow.mapSize.width = 2048;
-    sunLight.shadow.mapSize.height = 2048;
+    sunLight.castShadow = !isMobile;
+    sunLight.shadow.mapSize.width = 512;
+    sunLight.shadow.mapSize.height = 512;
     scene.add(sunLight);
 
     const fillLight = new THREE.DirectionalLight(0x87ceeb, 1);
