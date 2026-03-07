@@ -1816,9 +1816,9 @@ function animate() {
 
         // Spinning animation when falling
         if (!pigLanded) {
-            pig.rotation.y += 0.02;
-            pig.rotation.x = Math.sin(time * 0.5) * 0.2 + scrollProgress * 0.5;
-            pig.rotation.z = Math.cos(time * 0.3) * 0.15;
+            pig.rotation.y += 0.008;
+            pig.rotation.x = Math.sin(time * 0.8) * 0.04;
+            pig.rotation.z = Math.cos(time * 0.3) * 0.05;
         }
 
         // Pig floats away IMMEDIATELY after landing (held by balloons)
@@ -2004,7 +2004,7 @@ function animate() {
     // Rotate and manage particles (stars and aerial sky)
     particles.forEach(p => {
         // Sky spheres rotate faster on desktop so seam drifts through quickly
-        const skyRotSpeed = (p.userData.isStarSphere || p.userData.isAerialSphere) ? (isMobile ? 0.0003 : 0.0012) : 0.0003;
+        const skyRotSpeed = (p.userData.isStarSphere || p.userData.isAerialSphere) ? (isMobile ? 0.00005 : 0.0001) : 0.0001;
         p.rotation.y += skyRotSpeed;
         // Only add x rotation for particle stars, not the sky spheres (keeps seam hidden below)
         if (!p.userData.isStarSphere && !p.userData.isAerialSphere) {
@@ -2212,7 +2212,7 @@ function animate() {
 
 // Auto-descend - now starts automatically
 let isDescending = false;
-const descentSpeedPerSecond = isMobile ? 0.001866 * 2.0 : 0.001866 * 2.85; // mobile ~198s to land, desktop ~140s to land
+const descentSpeedPerSecond = isMobile ? 0.001866 * 1.0 : 0.001866 * 1.425; // half speed: mobile ~396s to land, desktop ~280s to land
 
 // Note: Auto-descent now starts automatically via 'startDescent' event
 // Click-to-pause removed - descent always continues automatically

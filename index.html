@@ -252,7 +252,7 @@
 
         // Mobile detection for volume adjustment
         const isMobile = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent) || window.innerWidth < 768;
-        audio.volume = isMobile ? 1.0 : 0.12; // Will be controlled by GainNode on mobile
+        audio.volume = isMobile ? 1.0 : 0.06; // Will be controlled by GainNode on mobile
         audio.muted = false;
         narration.volume = 1.0; // Full volume narration always
 
@@ -267,7 +267,7 @@
                 // Music: quiet background
                 const musicSource = sharedAudioCtx.createMediaElementSource(audio);
                 const musicGain = sharedAudioCtx.createGain();
-                musicGain.gain.value = 0.06; // quiet background music
+                musicGain.gain.value = 0.03; // quiet background music
                 musicSource.connect(musicGain);
                 musicGain.connect(sharedAudioCtx.destination);
 
@@ -341,29 +341,25 @@
             { time: 127.0, text: "What if pigs can fly, but they have no reason to prove it and instead obey gravity?" },
             { time: 135.0, text: "If I chase the impossible, what am I trying to escape?" },
 
-            // Paragraph 7: 142-166s — grad school
+            // Paragraph 7: 142-166s — grad school + Harvard (all fits in 24s)
             { time: 142.0, text: "Graduate school decisions. I went to Dartmouth during a tour where I slept in the library because I booked an Airbnb in Dartmouth, Canada. Turns out I'm now homeless." },
-            { time: 154.0, text: "I get woken up by a security guard who asks if I'm a student. No, not yet, I say." },
-            { time: 160.0, text: "I get into Harvard for policy and Dartmouth for engineering. Which to choose? I might regret this forever, but something feels special about where AI was invented.",
+            { time: 152.0, text: "I get woken up by a security guard who asks if I'm a student. No, not yet, I say." },
+            { time: 157.0, text: "I get into Harvard for policy and Dartmouth for engineering. Which to choose? I might regret this forever, but something feels special about where AI was invented.",
               media: [{ type: 'image', src: '/photo 7.png' }] },
+            { time: 161.0, text: "Something feels special about engineering. For a little while, I experienced FOMO, but not for an event, but rather for a life I could have lived." },
+            { time: 163.5, text: "Did I make the right decision? Can I regret a reality I don't know?" },
 
-            // Paragraph 8: 166-193s — FOMO, regret
-            { time: 166.0, text: "Something feels special about engineering. For a little while, I experienced FOMO, but not for an event, but rather for a life I could have lived." },
-            { time: 175.0, text: "Did I make the right decision? Can I regret a reality I don't know?" },
+            // Paragraph 8: 166-193s — life keeps going
+            { time: 166.0, text: "Life just keeps going. Friends do crazy things, friends get rich, famous, friends get married, people I know of all ages die." },
+            { time: 175.0, text: "Each moment just goes by, and the same uncomfortable feeling you have when you graduate from elementary school is the same one you have when a friend gets married." },
+            { time: 183.0, text: "Just, huh, guess that just happened. I'm really scared of that feeling many years from now when there isn't the next thing to look forward to." },
 
-            // Paragraph 9: 166-193s — life keeps going
-            { time: 181.0, text: "Life just keeps going. Friends do crazy things, friends get rich, famous, friends get married, people I know of all ages die." },
-            { time: 190.0, text: "Each moment just goes by, and the same uncomfortable feeling you have when you graduate from elementary school is the same one you have when a friend gets married." },
-
-            // Paragraph 10: 193-221s — scared, vulnerable
-            { time: 193.0, text: "Just, huh, guess that just happened. I'm really scared of that feeling many years from now when there isn't the next thing to look forward to." },
-            { time: 204.0, text: "In the meantime, I desperately feel the moments, trying to push out any vulnerability I'd encounter by just sitting with the present." },
-            { time: 213.0, text: "I don't feel any less exposed now than I did in front of my middle school peers in my underwear. I'm still standing bare, waiting for the laughter to pass so I can move on." },
-
-            // Paragraph 11: 221s+ — still on stage
-            { time: 221.0, text: "I chase the next accolade so I can move on. I embark in the next adventure so I can move on." },
-            { time: 228.0, text: "In seventh grade, I wanted so badly to exit the stage, but I couldn't then." },
-            { time: 234.0, text: "And I still haven't now." }
+            // Paragraph 9: 193-221s — in the meantime, still on stage
+            { time: 193.0, text: "In the meantime, I desperately feel the moments, trying to push out any vulnerability I'd encounter by just sitting with the present." },
+            { time: 201.0, text: "I don't feel any less exposed now than I did in front of my middle school peers in my underwear. I'm still standing bare, waiting for the laughter to pass so I can move on." },
+            { time: 211.0, text: "I chase the next accolade so I can move on. I embark in the next adventure so I can move on." },
+            { time: 216.0, text: "In seventh grade, I wanted so badly to exit the stage, but I couldn't then." },
+            { time: 219.0, text: "And I still haven't now." }
         ];
 
         let lastShownIndex = -1;
