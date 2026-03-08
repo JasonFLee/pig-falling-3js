@@ -4,7 +4,6 @@ import { OBJLoader } from 'three/examples/jsm/loaders/OBJLoader.js';
 import { MTLLoader } from 'three/examples/jsm/loaders/MTLLoader.js';
 import { FBXLoader } from 'three/examples/jsm/loaders/FBXLoader.js';
 import { GLTFLoader } from 'three/examples/jsm/loaders/GLTFLoader.js';
-import { RGBELoader } from 'three/examples/jsm/loaders/RGBELoader.js';
 import { EffectComposer, RenderPass, EffectPass, BloomEffect, DepthOfFieldEffect, VignetteEffect, NoiseEffect, SMAAEffect } from 'postprocessing';
 import { GUI } from 'lil-gui';
 
@@ -192,12 +191,11 @@ const starsTexturePreload = textureLoader.load('/8k_stars_milky_way.jpg',
     undefined,
     (err) => console.error('Stars texture error:', err)
 );
-let aerialCloudTexturePreload = null;
-new RGBELoader().load('/cloud_layers_4k.hdr', (hdrTexture) => {
-    hdrTexture.mapping = THREE.EquirectangularReflectionMapping;
-    aerialCloudTexturePreload = hdrTexture;
-    console.log('Cloud HDR texture loaded (seamless)');
-}, undefined, (err) => console.error('Cloud HDR texture error:', err));
+const aerialCloudTexturePreload = textureLoader.load('/aerial_view_of_clouds_under_light_blue_sky_4k_hd_light_blue-3840x2160.jpg',
+    () => console.log('Aerial cloud texture loaded'),
+    undefined,
+    (err) => console.error('Aerial cloud texture error:', err)
+);
 
 // Layer information - extended cloud layer
 const layerInfo = [
@@ -434,10 +432,11 @@ function createStars() {
     scene.add(starSphere);
     particles.push(starSphere);
 
-    // Add aerial cloud HDR sphere for atmosphere (seamless by nature of equirectangular HDR)
+    // Add aerial cloud photo sphere for atmosphere (canvas-blended to hide seam)
     const aerialSphereGeometry = new THREE.SphereGeometry(2400, isMobile ? 48 : 256, isMobile ? 24 : 128);
+    const seamlessAerialTexture = makeSeamlessTexture(aerialCloudTexturePreload);
     const aerialSphereMaterial = new THREE.MeshBasicMaterial({
-        map: aerialCloudTexturePreload,
+        map: seamlessAerialTexture || aerialCloudTexturePreload,
         side: THREE.BackSide,
         transparent: true,
         opacity: 0
