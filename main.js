@@ -191,7 +191,7 @@ const starsTexturePreload = textureLoader.load('/8k_stars_milky_way.jpg',
     undefined,
     (err) => console.error('Stars texture error:', err)
 );
-const aerialCloudTexturePreload = textureLoader.load('/aerial_view_of_clouds_under_light_blue_sky_4k_hd_light_blue-3840x2160.jpg',
+const aerialCloudTexturePreload = textureLoader.load('/cloud_sky.jpg',
     () => console.log('Aerial cloud texture loaded'),
     undefined,
     (err) => console.error('Aerial cloud texture error:', err)
@@ -2239,7 +2239,7 @@ function animate() {
 
 // Auto-descend - now starts automatically
 let isDescending = false;
-const descentSpeedPerSecond = 0.003461; // land at ~213.7s (10s before 223.7s audio ends): 0.7391/213.7
+const descentSpeedPerSecond = 0.004845; // 40% faster than original 0.003461
 
 // Note: Auto-descent now starts automatically via 'startDescent' event
 // Click-to-pause removed - descent always continues automatically
