@@ -2239,7 +2239,7 @@ function animate() {
 
 // Auto-descend - now starts automatically
 let isDescending = false;
-const descentSpeedPerSecond = 0.003304; // lands exactly at audio end ~223.7s (0.7391/223.7)
+const descentSpeedPerSecond = 0.003634; // 10% faster than audio-sync speed
 
 // Note: Auto-descent now starts automatically via 'startDescent' event
 // Click-to-pause removed - descent always continues automatically
