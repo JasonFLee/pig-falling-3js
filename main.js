@@ -144,6 +144,7 @@ let landingTime = 0;
 let journeyStarted = false;
 let pigVelocityY = 0; // Pig's falling velocity
 const gravity = -0.5; // Gravity strength
+let pigTwirlVelocity = 0; // Extra Y spin from click/tap
 let pigTrailParticles = []; // Beautiful particle trail behind pig
 let atmosphericParticlesCreated = false; // Track if atmospheric particles have been created
 let lastScrollProgress = 0; // Track if pig is actually moving
@@ -1843,9 +1844,10 @@ function animate() {
 
         // Spinning animation when falling
         if (!pigLanded) {
-            pig.rotation.y += 0.008;
+            pig.rotation.y += 0.008 + pigTwirlVelocity;
             pig.rotation.x = Math.sin(time * 0.8) * 0.04;
             pig.rotation.z = Math.cos(time * 0.3) * 0.05;
+            pigTwirlVelocity *= 0.92; // decay
         }
 
         // Pig floats away IMMEDIATELY after landing (held by balloons)
@@ -2277,6 +2279,14 @@ function updateScroll() {
 
     requestAnimationFrame(updateScroll);
 }
+
+// Click/tap to twirl pig
+function triggerTwirl() {
+    if (!journeyStarted || pigLanded) return;
+    pigTwirlVelocity = 0.45; // burst of fast spin, decays naturally
+}
+window.addEventListener('click', triggerTwirl);
+window.addEventListener('touchstart', triggerTwirl, { passive: true });
 
 // Handle window resize
 window.addEventListener('resize', () => {
