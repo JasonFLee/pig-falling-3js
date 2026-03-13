@@ -21,7 +21,7 @@ const renderer = new THREE.WebGLRenderer({
 });
 
 renderer.setSize(window.innerWidth, window.innerHeight);
-renderer.setPixelRatio(isMobile ? 1 : Math.min(window.devicePixelRatio, 2)); // Cap at 1 on mobile to avoid GPU overload
+renderer.setPixelRatio(Math.min(window.devicePixelRatio, isMobile ? 1.5 : 2)); // 1.5 on mobile: sharp without full Retina GPU cost
 renderer.toneMapping = THREE.ACESFilmicToneMapping;
 renderer.toneMappingExposure = 1.2;
 renderer.shadowMap.enabled = true;
