@@ -207,49 +207,72 @@ const layerInfo = [
     { name: "Green Meadow", desc: "A soft landing on Earth", start: 0.90, end: 1.0 }
 ];
 
+// Resolves once the pig is actually in the scene (real model or fallback), so
+// index.html can hold the story back rather than starting over an empty sky.
+let markPigReady;
+window.pigReady = new Promise((resolve) => { markPigReady = resolve; });
+
 // Create cute pig model from FBX
+// Load texture FIRST and wait for it to fully load, then load the FBX.
+// This prevents the desktop race condition where the FBX callback fires
+// before the texture finishes downloading, leaving the pig rendered black.
 function createPig() {
     const pigGroup = new THREE.Group();
 
+    const textureLoader = new THREE.TextureLoader();
     const fbxLoader = new FBXLoader();
-    fbxLoader.load(
-        'cute-pig/source/Cute Pig.fbx',
-        (object) => {
-            console.log('Cute pig model loaded successfully');
 
-            // Load the texture
-            const textureLoader = new THREE.TextureLoader();
-            const pigTexture = textureLoader.load('cute-pig/textures/Pig_Color_Base_Color.png');
+    const applyFbx = (pigTexture) => {
+        fbxLoader.load(
+            '/cute-pig/source/Cute Pig.fbx',
+            (object) => {
+                console.log('Cute pig model loaded successfully');
+                object.traverse((child) => {
+                    if (child.isMesh) {
+                        child.castShadow = true;
+                        child.receiveShadow = true;
+                        const matOpts = { roughness: 0.5, metalness: 0.1 };
+                        if (pigTexture) {
+                            matOpts.map = pigTexture;
+                        } else {
+                            matOpts.color = 0xffb6d9;
+                        }
+                        child.material = new THREE.MeshStandardMaterial(matOpts);
+                        child.material.needsUpdate = true;
+                    }
+                });
+                object.scale.set(0.02, 0.02, 0.02);
+                object.rotation.y = Math.PI;
+                pigGroup.add(object);
+                console.log('Cute pig added to scene');
+                markPigReady();
+            },
+            undefined,
+            (error) => {
+                console.error('Error loading cute pig FBX:', error);
+                const fallbackGeo = new THREE.SphereGeometry(2, 32, 32);
+                const fallbackMat = new THREE.MeshStandardMaterial({
+                    map: pigTexture || null,
+                    color: pigTexture ? 0xffffff : 0xffb6d9
+                });
+                const fallback = new THREE.Mesh(fallbackGeo, fallbackMat);
+                pigGroup.add(fallback);
+                markPigReady();
+            }
+        );
+    };
 
-            object.traverse((child) => {
-                if (child.isMesh) {
-                    child.castShadow = true;
-                    child.receiveShadow = true;
-
-                    // Apply the texture
-                    child.material = new THREE.MeshStandardMaterial({
-                        map: pigTexture,
-                        roughness: 0.5,
-                        metalness: 0.1
-                    });
-                }
-            });
-
-            // Scale and rotate the model to match the old pig orientation
-            object.scale.set(0.02, 0.02, 0.02); // FBX models are usually large
-            object.rotation.y = Math.PI; // Face forward
-
-            pigGroup.add(object);
-            console.log('Cute pig added to scene');
+    textureLoader.load(
+        '/cute-pig/textures/Pig_Color_Base_Color.png',
+        (tex) => {
+            tex.colorSpace = THREE.SRGBColorSpace;
+            tex.anisotropy = 8;
+            applyFbx(tex);
         },
         undefined,
-        (error) => {
-            console.error('Error loading cute pig FBX:', error);
-            // Fallback: create a simple pink sphere if model fails to load
-            const fallbackGeo = new THREE.SphereGeometry(2, 32, 32);
-            const fallbackMat = new THREE.MeshStandardMaterial({ color: 0xffb6d9 });
-            const fallback = new THREE.Mesh(fallbackGeo, fallbackMat);
-            pigGroup.add(fallback);
+        (err) => {
+            console.error('Pig texture failed to load, loading FBX without texture:', err);
+            applyFbx(null);
         }
     );
 
@@ -579,7 +602,7 @@ function createRocket() {
     // Load Saturn V rocket model
     const mtlLoader = new MTLLoader();
     mtlLoader.load(
-        'Space_Rocket_SaturnV/Saturn V/3d files/Saturn V.mtl',
+        '/Space_Rocket_SaturnV/Saturn V/3d files/Saturn V.mtl',
         (materials) => {
             materials.preload();
             console.log('Saturn V materials loaded successfully');
@@ -587,7 +610,7 @@ function createRocket() {
             const objLoader = new OBJLoader();
             objLoader.setMaterials(materials);
             objLoader.load(
-                'Space_Rocket_SaturnV/Saturn V/3d files/Saturn V.obj',
+                '/Space_Rocket_SaturnV/Saturn V/3d files/Saturn V.obj',
                 (object) => {
                     console.log('Saturn V model loaded successfully', object);
                     object.traverse((child) => {
@@ -710,12 +733,12 @@ function createPlaneWithBanner(message, position, rotation) {
 
     // Load airplane model
     const mtlLoader = new MTLLoader();
-    mtlLoader.load('Airplane_v1_L1.123c4a6fedec-1680-4a36-a228-b0d440a4f280/11803_Airplane_v1_l1.mtl', (materials) => {
+    mtlLoader.load('/Airplane_v1_L1.123c4a6fedec-1680-4a36-a228-b0d440a4f280/11803_Airplane_v1_l1.mtl', (materials) => {
         materials.preload();
 
         const objLoader = new OBJLoader();
         objLoader.setMaterials(materials);
-        objLoader.load('Airplane_v1_L1.123c4a6fedec-1680-4a36-a228-b0d440a4f280/11803_Airplane_v1_l1.obj', (object) => {
+        objLoader.load('/Airplane_v1_L1.123c4a6fedec-1680-4a36-a228-b0d440a4f280/11803_Airplane_v1_l1.obj', (object) => {
             object.traverse((child) => {
                 if (child.isMesh) {
                     child.castShadow = true;
@@ -778,7 +801,7 @@ function createPlaneWithBanner(message, position, rotation) {
 function createUFO() {
     const gltfLoader = new GLTFLoader();
     gltfLoader.load(
-        'Baked_Animations_UFO_Empty GLTF/UFO_Empty.glb',
+        '/Baked_Animations_UFO_Empty GLTF/UFO_Empty.glb',
         (gltf) => {
             const ufo = gltf.scene;
             ufo.traverse((child) => {
@@ -820,7 +843,7 @@ function createHermes() {
     let loadedCount = 0;
     modules.forEach(moduleName => {
         objLoader.load(
-            `Hermes/${moduleName}`,
+            `/Hermes/${moduleName}`,
             (object) => {
                 hermesGroup.add(object);
                 loadedCount++;
@@ -846,14 +869,14 @@ function createHermes() {
 function createHotAirBalloon() {
     const mtlLoader = new MTLLoader();
     mtlLoader.load(
-        'Hot_air_balloon_v1_L2.123c69a97f0e-9977-45dd-9570-457189ce2941/11809_Hot_air_balloon_l2.mtl',
+        '/Hot_air_balloon_v1_L2.123c69a97f0e-9977-45dd-9570-457189ce2941/11809_Hot_air_balloon_l2.mtl',
         (materials) => {
             materials.preload();
 
             const objLoader = new OBJLoader();
             objLoader.setMaterials(materials);
             objLoader.load(
-                'Hot_air_balloon_v1_L2.123c69a97f0e-9977-45dd-9570-457189ce2941/11809_Hot_air_balloon_l2.obj',
+                '/Hot_air_balloon_v1_L2.123c69a97f0e-9977-45dd-9570-457189ce2941/11809_Hot_air_balloon_l2.obj',
                 (object) => {
                     object.traverse((child) => {
                         if (child.isMesh) {
@@ -895,7 +918,7 @@ function createUpHouse() {
     const gltfLoader = new GLTFLoader();
     console.log('🔍 Attempting to load UP.glb...');
     gltfLoader.load(
-        'UP.glb',
+        '/UP.glb',
         (gltf) => {
             const object = gltf.scene;
             console.log('✅ UP.glb loaded successfully!', object);
@@ -963,12 +986,12 @@ function createAirplane() {
 
     // Load airplane model
     const mtlLoader = new MTLLoader();
-    mtlLoader.load('Airplane_v1_L1.123c4a6fedec-1680-4a36-a228-b0d440a4f280/11803_Airplane_v1_l1.mtl', (materials) => {
+    mtlLoader.load('/Airplane_v1_L1.123c4a6fedec-1680-4a36-a228-b0d440a4f280/11803_Airplane_v1_l1.mtl', (materials) => {
         materials.preload();
 
         const objLoader = new OBJLoader();
         objLoader.setMaterials(materials);
-        objLoader.load('Airplane_v1_L1.123c4a6fedec-1680-4a36-a228-b0d440a4f280/11803_Airplane_v1_l1.obj', (object) => {
+        objLoader.load('/Airplane_v1_L1.123c4a6fedec-1680-4a36-a228-b0d440a4f280/11803_Airplane_v1_l1.obj', (object) => {
             object.traverse((child) => {
                 if (child.isMesh) {
                     child.castShadow = true;
@@ -1713,11 +1736,6 @@ function init() {
         console.log('🎬 Journey started!');
     });
 
-    // Listen for start descent event (automatic descent)
-    window.addEventListener('startDescent', () => {
-        isDescending = true;
-        console.log('🚀 Auto-descent started!');
-    });
 
     // Allow index.html to restore scrollProgress (for resume on back navigation)
     window.addEventListener('restoreProgress', (e) => {
@@ -2210,52 +2228,23 @@ function animate() {
     }
 }
 
-// Auto-descend - now starts automatically
-let isDescending = false;
-const descentSpeedPerSecond = isMobile ? 0.001866 * 2.0 : 0.001866 * 2.85; // mobile ~198s to land, desktop ~140s to land
+// The descent is driven by the narration's own clock, not wall time, so the
+// visuals and the subtitles can never drift apart on a slow device, a
+// backgrounded tab, or a buffering stall. The pig must reach the Earth's
+// surface on the "pigs can fly but ... obey gravity" line (135.36s).
+const LANDING_NARRATION_TIME = 139;
+const PROGRESS_AT_LANDING = 1700 / 2300; // earthSurfaceY / total descent distance
 
-// Note: Auto-descent now starts automatically via 'startDescent' event
-// Click-to-pause removed - descent always continues automatically
-
-// Allow scroll wheel for manual control (desktop only)
-let scrollVelocity = 0;
-window.addEventListener('wheel', (e) => {
-    if (isMobile) return; // Mobile doesn't use wheel
-    if (!journeyStarted) return;
-    if (pigLanded) return;
-
-    // Manual scroll pauses auto-descent
-    isDescending = false;
-
-    scrollVelocity += e.deltaY * 0.00002; // Slower scroll wheel speed
-    scrollVelocity = Math.max(-0.01, Math.min(0.01, scrollVelocity));
-});
-
-let lastScrollTime = performance.now();
+const narrationEl = document.getElementById('narration-audio');
 
 function updateScroll() {
-    const now = performance.now();
-    const delta = Math.min((now - lastScrollTime) / 1000, 0.1); // delta in seconds, capped at 100ms to prevent jumps
-    lastScrollTime = now;
-
-    // Auto-descent when active - time-based so it works at any frame rate
-    if (isDescending && !pigLanded) {
-        scrollProgress += descentSpeedPerSecond * delta;
-    }
-
-    // Manual scroll
-    scrollProgress += scrollVelocity;
-
-    // Lock at ground level once landed
-    if (pigLanded) {
-        scrollProgress = 1;
-        scrollVelocity = 0;
-        isDescending = false;
+    if (!pigLanded) {
+        const t = narrationEl ? narrationEl.currentTime : 0;
+        const target = (t / LANDING_NARRATION_TIME) * PROGRESS_AT_LANDING;
+        scrollProgress = Math.max(0, Math.min(1, target));
     } else {
-        scrollProgress = Math.max(0, Math.min(1, scrollProgress));
+        scrollProgress = 1;
     }
-
-    scrollVelocity *= 0.95;
 
     updateLayerInfo();
 

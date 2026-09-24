@@ -286,12 +286,14 @@
             }
         }
 
-        // Preload audio as soon as page loads
-        let audioReady = false;
-        let narrationReady = false;
-
-        audio.addEventListener('canplaythrough', () => { audioReady = true; });
-        narration.addEventListener('canplaythrough', () => { narrationReady = true; });
+        // Resolve once `p` settles or `ms` elapses, whichever comes first, so a
+        // stalled download can never leave the intro stuck on "Loading".
+        function withTimeout(p, ms) {
+            return Promise.race([
+                Promise.resolve(p).catch(() => {}),
+                new Promise(resolve => setTimeout(resolve, ms))
+            ]);
+        }
 
         // Force load
         audio.load();
@@ -381,7 +383,7 @@
 
         let lastShownIndex = -1;
 
-        function showSegment(seg, dur) {
+        function showSegment(seg) {
             const overlay = document.getElementById('story-overlay');
             let html = '<div class="story-segment active"><div class="story-text">' + seg.text + '</div>';
             if (seg.media) {
@@ -398,11 +400,6 @@
             }
             html += '</div>';
             overlay.innerHTML = html;
-
-            setTimeout(() => {
-                const s = overlay.querySelector('.story-segment');
-                if (s) s.classList.remove('active');
-            }, Math.max(dur - 400, 300));
         }
 
         function triggerEndingSequence() {
@@ -490,9 +487,15 @@
                     if (t >= storySegments[i].time) {
                         if (i !== lastShownIndex) {
                             lastShownIndex = i;
-                            const next = storySegments[i + 1];
-                            const dur = next ? (next.time - storySegments[i].time) * 1000 : 10000;
-                            showSegment(storySegments[i], dur);
+                            showSegment(storySegments[i]);
+                        }
+                        // Fade on the narration's own clock, not wall time, so a
+                        // buffering stall can't blank a line that is still being read.
+                        const next = storySegments[i + 1];
+                        const endsAt = next ? next.time : (narration.duration || storySegments[i].time + 10);
+                        if (t >= endsAt - 0.4) {
+                            const s = document.querySelector('#story-overlay .story-segment');
+                            if (s) s.classList.remove('active');
                         }
                         break;
                     }
@@ -524,43 +527,44 @@
             // Re-request wake lock inside user gesture (more reliable on iOS Safari)
             requestWakeLock();
 
-            // Start BOTH audio files immediately on user click (required for mobile)
-            // This unlocks audio playback on iOS/Android
-            try {
-                await Promise.all([
-                    audio.play(),
-                    narration.play()
-                ]);
-            } catch(e) {
-                console.log('Audio start:', e);
-            }
+            // Start BOTH audio files immediately on user click (required for mobile).
+            // The play() calls must happen inside the gesture to unlock iOS/Android
+            // audio, but they are never awaited without a cap: on a slow connection
+            // they stay pending behind the 3D model downloads and the button would
+            // sit on "Loading" forever.
+            const audioUnlocked = Promise.all([
+                audio.play().catch(e => console.log('Music start:', e)),
+                narration.play().catch(e => console.log('Narration start:', e))
+            ]);
+            await withTimeout(audioUnlocked, 4000);
 
             // Pause narration, reset to start - will play when story starts
             narration.pause();
             narration.currentTime = 0;
 
-            // Wait for scene to signal it's ready, or timeout after 2s
-            let sceneReady = false;
-            const readyHandler = () => { sceneReady = true; };
-            window.addEventListener('sceneReady', readyHandler);
+            // Hold the story until the things it actually needs are present: the
+            // pig model, a rendered canvas, and enough narration buffered to play.
+            // Capped so a stalled asset degrades instead of hanging.
+            const canvasReady = new Promise(resolve => {
+                if (document.querySelector('#canvas-container canvas')) return resolve();
+                window.addEventListener('sceneReady', () => resolve(), { once: true });
+                const poll = setInterval(() => {
+                    if (document.querySelector('#canvas-container canvas')) {
+                        clearInterval(poll);
+                        resolve();
+                    }
+                }, 50);
+            });
 
-            // Check if scene is already rendered
-            const checkReady = () => {
-                return new Promise(resolve => {
-                    const check = () => {
-                        if (sceneReady || document.querySelector('#canvas-container canvas')) {
-                            resolve();
-                        } else {
-                            setTimeout(check, 50);
-                        }
-                    };
-                    check();
-                    // Max wait 2 seconds
-                    setTimeout(resolve, 2000);
-                });
-            };
+            const narrationBuffered = new Promise(resolve => {
+                if (narration.readyState >= 3) return resolve();
+                narration.addEventListener('canplaythrough', () => resolve(), { once: true });
+            });
 
-            await checkReady();
+            await withTimeout(
+                Promise.all([canvasReady, narrationBuffered, window.pigReady || Promise.resolve()]),
+                20000
+            );
 
             // Now fade out and start
             intro.classList.add('fade-out');
@@ -568,7 +572,6 @@
             setTimeout(() => {
                 intro.remove();
                 window.dispatchEvent(new CustomEvent('journeyStart'));
-                window.dispatchEvent(new CustomEvent('startDescent'));
                 startStory();
             }, 500);
         });
